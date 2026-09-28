@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CheckMultas · Ferramentas</title>
+<title>Vehicula · Ferramentas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -385,12 +385,6 @@ code{
 .drop__main{font-size:var(--fs-15);color:var(--text-1);}
 .drop__hint{font-size:var(--fs-12);color:var(--text-3);}
 .drop input[type=file]{display:none;}
-.drop--slot{padding:var(--sp-4) var(--sp-3);min-height:104px;gap:var(--sp-1);}
-.drop--slot svg{width:20px;height:20px;}
-.drop--slot.is-filled{
-  border-style:solid;border-color:var(--ok);background:var(--ok-soft);cursor:default;
-}
-.drop--slot.is-filled svg{stroke:var(--ok);}
 
 /* --- Estado vazio --- */
 .empty{text-align:center;padding:var(--sp-8) var(--sp-5);color:var(--text-3);}
@@ -560,6 +554,29 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
   .pipeline{overflow-x:auto;}
 }
 
+/* ---------- Toast global (confirmação de cópia) ---------- */
+.toast{
+  position:fixed;right:20px;bottom:20px;z-index:100;
+  display:flex;align-items:center;gap:var(--sp-2);
+  padding:10px 14px;border-radius:var(--r-md);
+  background:rgba(74,222,128,.1);border:1px solid #2f5b3f;color:var(--ok);
+  font-size:var(--fs-13);font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  opacity:0;transform:translateY(8px);pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{background:var(--err-soft);border-color:rgba(248,113,113,.45);color:var(--err);}
+.toast svg{width:16px;height:16px;flex-shrink:0;}
+/* Ícone de ajuda em cabeçalhos de tabela (tooltip nativo via title) */
+.th-help{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:15px;height:15px;margin-left:4px;border-radius:50%;
+  border:1px solid var(--border-m);color:var(--text-3);
+  font-size:10px;font-weight:600;line-height:1;cursor:help;vertical-align:middle;
+}
+/* Validador — caractere na posição incorreta grifado na própria placa */
+.placa .pos-err{background:rgba(248,113,171,.25);color:var(--err);border-radius:3px;padding:0 1px;}
+.placa .pos-err-label{margin-left:var(--sp-2);font-size:var(--fs-11);font-weight:500;color:var(--err);letter-spacing:0;}
 </style>
 </head>
 <body>
@@ -595,7 +612,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
        ==================================================== -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">CheckMultas</div>
+      <div class="logo-text">Vehicula</div>
       <div class="logo-sub">Ferramentas para placas<br>e dados veiculares</div>
     </div>
 
@@ -682,7 +699,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
       <div class="home-screen">
         <div class="home-banner">
           <svg><use href="#ic-bolt"/></svg>
-          <h1>Ferramentas CheckMultas</h1>
+          <h1>Ferramentas Vehicula</h1>
           <p>Utilitários para placas, infrações e dados veiculares. Marque com <svg><use href="#ic-heart"/></svg> as que mais usa para tê-las sempre à mão.</p>
         </div>
 
@@ -727,7 +744,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
             <button class="fav-btn" data-id="frota" aria-pressed="false" aria-label="Favoritar Unificar Arquivo" onclick="toggleFav(event,'frota')"><svg><use href="#ic-heart"/></svg></button>
             <div class="card-icon-box"><svg><use href="#ic-frota"/></svg></div>
             <h3>Unificar Arquivo</h3>
-            <p>Une até 3 planilhas Excel de restrição/localização em um único CSV padronizado com colunas validadas.</p>
+            <p>Une várias planilhas Excel de restrição/localização em um único CSV padronizado com colunas validadas.</p>
           </div>
           <div class="home-card" role="button" tabindex="0" data-id="consolidador" data-group="dados" onclick="showPageByName('consolidador')">
             <button class="fav-btn" data-id="consolidador" aria-pressed="false" aria-label="Favoritar Verificador de Colunas" onclick="toggleFav(event,'consolidador')"><svg><use href="#ic-heart"/></svg></button>
@@ -768,13 +785,13 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
         <section class="panel" id="conv-copy-panel" style="display:none;">
           <div class="copy-row">
             <span class="copy-label">Originais</span>
-            <button class="btn btn--sm" id="copy-orig-list-btn">Lista</button>
-            <button class="btn btn--sm" id="copy-orig-sql-btn">SQL (IN)</button>
+            <button class="btn btn--sm" id="copy-orig-list-btn">Exportar Lista</button>
+            <button class="btn btn--sm" id="copy-orig-sql-btn">Exportar SQL IN</button>
           </div>
           <div class="copy-row">
             <span class="copy-label">Convertidas</span>
-            <button class="btn btn--sm" id="copy-conv-list-btn">Lista</button>
-            <button class="btn btn--sm" id="copy-conv-sql-btn">SQL (IN)</button>
+            <button class="btn btn--sm" id="copy-conv-list-btn">Exportar Lista</button>
+            <button class="btn btn--sm" id="copy-conv-sql-btn">Exportar SQL IN</button>
           </div>
         </section>
 
@@ -799,14 +816,15 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
         <textarea id="val-input" class="field field--area field--mono"
           placeholder="ABC1234&#10;ABC1D23&#10;XYZ12A3"
           spellcheck="false" autocomplete="off"></textarea>
+        <div class="input-hint">Uma placa por linha · 7 caracteres · antigo <kbd>AAA0000</kbd> ou Mercosul <kbd>AAA0A00</kbd> · hífens e espaços são ignorados</div>
         <div class="btn-row">
           <button class="btn btn--primary" onclick="val_verificar()">Verificar todas</button>
           <button class="btn" onclick="val_limpar()">Limpar</button>
         </div>
 
         <div id="val-downloads" style="display:none;">
-          <button class="btn btn--sm dl-validas"   onclick="val_baixar('validas')"><svg><use href="#ic-download"/></svg> Válidas (.xlsx)</button>
-          <button class="btn btn--sm dl-invalidas" onclick="val_baixar('invalidas')"><svg><use href="#ic-download"/></svg> Inválidas (.xlsx)</button>
+          <button class="btn btn--sm dl-validas"   onclick="val_baixar('validas')"><svg><use href="#ic-download"/></svg> Exportar Válidas (.xlsx)</button>
+          <button class="btn btn--sm dl-invalidas" onclick="val_baixar('invalidas')"><svg><use href="#ic-download"/></svg> Exportar Inválidas (.xlsx)</button>
         </div>
 
         <div id="val-resumo"></div>
@@ -834,10 +852,10 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
               <svg><use href="#ic-play"/></svg> Processar
             </button>
             <button class="btn btn--block" id="json-btn-download" disabled>
-              <svg><use href="#ic-download"/></svg> Baixar CSV
+              <svg><use href="#ic-download"/></svg> Exportar CSV
             </button>
             <button class="btn btn--block" id="json-btn-sql" disabled>
-              <svg><use href="#ic-copy"/></svg> Copiar placas SQL IN
+              <svg><use href="#ic-copy"/></svg> Exportar SQL IN
             </button>
             <button class="btn btn--block" id="json-btn-sample">
               <svg><use href="#ic-file"/></svg> Carregar exemplo
@@ -899,7 +917,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
           </div>
           <div id="sqlin-box" class="sqlin-box"></div>
           <div style="display:flex;justify-content:flex-end;">
-            <button class="btn" id="sqlin-copy-btn" onclick="sqlin_copy()"><svg><use href="#ic-copy"/></svg> Copiar</button>
+            <button class="btn" id="sqlin-copy-btn" onclick="sqlin_copy()"><svg><use href="#ic-copy"/></svg> Exportar SQL IN</button>
           </div>
         </div>
 
@@ -942,7 +960,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
           </div>
           <div id="sqlait-box" class="sqlin-box"></div>
           <div style="display:flex;justify-content:flex-end;">
-            <button class="btn" id="sqlait-copy-btn" onclick="sqlait_copy()"><svg><use href="#ic-copy"/></svg> Copiar</button>
+            <button class="btn" id="sqlait-copy-btn" onclick="sqlait_copy()"><svg><use href="#ic-copy"/></svg> Exportar SQL IN</button>
           </div>
         </div>
 
@@ -957,24 +975,14 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
 
         <div class="panel">
           <p style="font-size:var(--fs-13);color:var(--text-2);margin-bottom:var(--sp-5);">
-            Envie 3 planilhas Excel de restrição/localização. O app valida as colunas, une e gera um CSV padronizado.
+            Envie uma ou mais planilhas Excel de restrição/localização. O app valida as colunas, une e gera um CSV padronizado.
           </p>
 
           <!-- pipeline visual -->
           <div class="pipeline">
             <div class="pipeline__step">
-              <div id="frota-dot-1" class="pipeline__dot">1</div>
-              <span>Arquivo A</span>
-            </div>
-            <div class="pipeline__line"></div>
-            <div class="pipeline__step">
-              <div id="frota-dot-2" class="pipeline__dot">2</div>
-              <span>Arquivo B</span>
-            </div>
-            <div class="pipeline__line"></div>
-            <div class="pipeline__step">
-              <div id="frota-dot-3" class="pipeline__dot">3</div>
-              <span>Arquivo C</span>
+              <div id="frota-dot-files" class="pipeline__dot"><svg><use href="#ic-file"/></svg></div>
+              <span id="frota-step-files">Arquivos</span>
             </div>
             <div class="pipeline__line"></div>
             <div class="pipeline__step">
@@ -988,30 +996,21 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
             </div>
           </div>
 
-          <!-- slots de upload -->
-          <div id="frota-slots" style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);margin-bottom:var(--sp-4);">
-            <div class="frota-slot drop drop--slot" data-slot="0" role="button" tabindex="0" aria-label="Selecionar arquivo 1" onclick="frota_triggerPick(0)">
-              <span class="drop__hint">ARQUIVO 1</span>
-              <svg><use href="#ic-file"/></svg>
-              <span class="drop__hint">Clique ou arraste</span>
-            </div>
-            <div class="frota-slot drop drop--slot" data-slot="1" role="button" tabindex="0" aria-label="Selecionar arquivo 2" onclick="frota_triggerPick(1)">
-              <span class="drop__hint">ARQUIVO 2</span>
-              <svg><use href="#ic-file"/></svg>
-              <span class="drop__hint">Clique ou arraste</span>
-            </div>
-            <div class="frota-slot drop drop--slot" data-slot="2" role="button" tabindex="0" aria-label="Selecionar arquivo 3" onclick="frota_triggerPick(2)">
-              <span class="drop__hint">ARQUIVO 3</span>
-              <svg><use href="#ic-file"/></svg>
-              <span class="drop__hint">Clique ou arraste</span>
-            </div>
+          <!-- upload múltiplo (mesmo padrão do Verificador de Colunas) -->
+          <div class="drop" id="frota-drop" role="button" tabindex="0" aria-label="Selecionar planilhas para unificar">
+            <svg><use href="#ic-upload"/></svg>
+            <span class="drop__main">Arraste ou <strong>clique para escolher</strong> planilhas</span>
+            <span class="drop__hint">.xlsx · .xls — quantos arquivos precisar</span>
           </div>
-
-          <div id="frota-dz-hint" style="text-align:center;color:var(--text-3);font-size:var(--fs-12);margin-bottom:var(--sp-4);">
-            Arraste até 3 arquivos .xlsx/.xls sobre os quadros acima, ou clique em cada um
-          </div>
-
           <input type="file" id="frota-file-input" accept=".xlsx,.xls" multiple style="display:none;">
+
+          <!-- lista dinâmica de arquivos -->
+          <div id="frota-list-wrap" class="table-wrap" style="display:none;margin-top:var(--sp-4);margin-bottom:var(--sp-4);">
+            <table class="table">
+              <thead><tr><th>#</th><th>Arquivo</th><th></th></tr></thead>
+              <tbody id="frota-list-body"></tbody>
+            </table>
+          </div>
 
           <div class="btn-row">
             <button class="btn btn--primary" id="frota-process-btn" disabled onclick="frota_processar()">
@@ -1040,7 +1039,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
               <strong id="frota-stat-rows" style="color:var(--accent);font-family:var(--font-mono);">0</strong>
             </div>
             <button class="btn btn--primary btn--block" onclick="frota_baixarCSV()">
-              <svg><use href="#ic-download"/></svg> Baixar CSV Unificado
+              <svg><use href="#ic-download"/></svg> Exportar CSV Unificado
             </button>
           </div>
         </div>
@@ -1090,7 +1089,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
           </label>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>#</th><th>Coluna</th><th>Máx. caracteres</th><th>Sugestão SQL</th></tr></thead>
+              <thead><tr><th>#</th><th>Coluna</th><th>Máx. caracteres</th><th>Sugestão SQL <span class="th-help" title="Maior comprimento encontrado na coluna, entre todos os arquivos, com margem de 20% (arredondada para cima). Ex.: máx. 10 → VARCHAR(12)." tabindex="0" aria-label="Como a sugestão é calculada">?</span></th></tr></thead>
               <tbody id="cons-width-body"></tbody>
             </table>
           </div>
@@ -1108,7 +1107,7 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
               <option value="txt">TXT (tab)</option>
             </select>
             <button class="btn btn--primary" onclick="cons_exportar()">
-              <svg><use href="#ic-download"/></svg> Baixar arquivo
+              <svg><use href="#ic-download"/></svg> Exportar consolidado
             </button>
             <span class="hint" id="cons-export-hint" style="margin-top:0;"></span>
           </div>
@@ -1123,8 +1122,25 @@ details.preview-block[open] summary::after{transform:rotate(45deg);}
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
+<div class="toast" id="cm-toast" role="status" aria-live="polite"></div>
 <script>
 'use strict';
+
+/* ============================================================
+   TOAST GLOBAL — feedback de cópia/ação (usado por todos os apps)
+   ============================================================ */
+let cm_toastTimer=null;
+function mostrarToast(msg, tipo='ok', ms=2500){
+  const el=document.getElementById('cm-toast');
+  if(!el) return;
+  const icon=tipo==='err'?'#ic-alert':'#ic-check';
+  el.innerHTML=`<svg><use href="${icon}"/></svg><span>${msg}</span>`;
+  el.classList.toggle('err', tipo==='err');
+  el.classList.add('show');
+  clearTimeout(cm_toastTimer);
+  cm_toastTimer=setTimeout(()=>el.classList.remove('show'), ms);
+}
+function toastCopiado(){ mostrarToast('Copiado para a área de transferência'); }
 
 /* ============================================================
    NAVEGAÇÃO E TEMA
@@ -1140,7 +1156,7 @@ function showPage(id, navBtn) {
     jsoncsv:   ['JSON → CSV','Converter e exportar'],
     sqlin:     ['Conversor SQL IN','Lista → cláusula IN'],
     sqlait:    ['SQL IN AIT','Lista de AITs → cláusula IN'],
-    frota:     ['Unificar Arquivo','3 planilhas → 1 CSV'],
+    frota:     ['Unificar Arquivo','N planilhas → 1 CSV'],
     consolidador: ['Verificador de Colunas','txt · csv · xlsx → 1 arquivo']
   };
   const [t, s] = titles[id] || ['',''];
@@ -1371,7 +1387,8 @@ function toggleTheme(){
     navigator.clipboard.writeText(text).then(()=>{
       const orig=btnEl.innerHTML;btnEl.innerHTML='Copiado!';
       setTimeout(()=>{btnEl.innerHTML=orig;},1500);
-    }).catch(()=>showError('Não foi possível copiar.'));
+      toastCopiado();
+    }).catch(()=>{showError('Não foi possível copiar.');mostrarToast('Não foi possível copiar','err');});
   }
   function getValid(){return plates.filter(p=>!p.error);}
   function uniqueValues(getter){return[...new Set(getValid().map(getter))];}
@@ -1400,6 +1417,25 @@ function val_classificar(ch){
   if(/[A-Z]/.test(ch)) return'L';
   if(/[0-9]/.test(ch)) return'N';
   return'?';
+}
+/* Índice (0-based) do primeiro caractere fora do gabarito mais próximo, ou -1. */
+function val_posicaoErro(placa){
+  if(placa.length!==7) return -1;
+  const tipos=[...placa].map(val_classificar);
+  let melhor='antigo',maxAcertos=-1;
+  for(const fmt in GABARITO){
+    const ac=tipos.filter((t,i)=>t===GABARITO[fmt][i]).length;
+    if(ac>maxAcertos){maxAcertos=ac;melhor=fmt;}
+  }
+  for(let i=0;i<7;i++) if(tipos[i]!==GABARITO[melhor][i]) return i;
+  return -1;
+}
+/* Placa com o caractere errado grifado (HTML), para o diagnóstico inline. */
+function val_placaGrifada(placa){
+  const i=val_posicaoErro(placa);
+  if(i<0) return placa||'(vazia)';
+  return placa.slice(0,i)+'<span class="pos-err">'+placa[i]+'</span>'+placa.slice(i+1)
+    +'<span class="pos-err-label">posição '+(i+1)+'</span>';
 }
 function val_diagnosticar(placa){
   if(placa.length!==7) return`tem ${placa.length} caractere(s), esperado 7`;
@@ -1439,7 +1475,7 @@ function val_verificar(){
       val_dadosValidos.push({Linha:numLinha,Placa:placa,Formato:tipo});
     } else {
       item.className='item erro';
-      item.innerHTML=`<span class="linha">L${numLinha}</span><span class="placa">${placa||'(vazia)'}</span><span class="sugestao">${val_diagnosticar(placa)}</span>`;
+      item.innerHTML=`<span class="linha">L${numLinha}</span><span class="placa">${val_placaGrifada(placa)}</span><span class="sugestao">${val_diagnosticar(placa)}</span>`;
       itensInvalidos.push(item);
       val_dadosInvalidos.push({Linha:numLinha,Placa:placa,Problema:val_diagnosticar(placa)});
     }
@@ -1613,6 +1649,7 @@ function val_baixar(tipo){
     if(!currentPlates.length) return;
     const ok=await copyToClipboard(buildSqlIn(currentPlates));
     showStatus(ok?currentPlates.length+' placa(s) copiada(s) para a área de transferência.':'Não foi possível copiar automaticamente.',ok?'success':'error');
+    if(ok) toastCopiado(); else mostrarToast('Não foi possível copiar','err');
   });
   document.getElementById('json-btn-sample').addEventListener('click',()=>{
     input.value=JSON.stringify([
@@ -1667,8 +1704,9 @@ function val_baixar(tipo){
     const btn = document.getElementById('sqlin-copy-btn');
     navigator.clipboard.writeText(lastRaw).then(()=>{
       btn.innerHTML='<svg><use href="#ic-check"/></svg> Copiado!';
-      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Copiar'; },1800);
-    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; });
+      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Exportar SQL IN'; },1800);
+      toastCopiado();
+    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; mostrarToast('Não foi possível copiar','err'); });
   };
 
   document.addEventListener('DOMContentLoaded',()=>{
@@ -1718,8 +1756,9 @@ function val_baixar(tipo){
     const btn = document.getElementById('sqlait-copy-btn');
     navigator.clipboard.writeText(lastRaw).then(()=>{
       btn.innerHTML='<svg><use href="#ic-check"/></svg> Copiado!';
-      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Copiar'; },1800);
-    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; });
+      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Exportar SQL IN'; },1800);
+      toastCopiado();
+    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; mostrarToast('Não foi possível copiar','err'); });
   };
 
   document.addEventListener('DOMContentLoaded',()=>{
@@ -1734,7 +1773,7 @@ function val_baixar(tipo){
    APP 6 — UNIFICADOR DE FROTA IMPEDIMENTO
    ============================================================ */
 (function(){
-  let frota_slotFiles=[null,null,null];
+  let frota_files=[];
   let frota_csvBlob=null;
   let frota_csvFilename='';
 
@@ -1772,96 +1811,63 @@ function val_baixar(tipo){
     if(cls) el.classList.add(cls);
   }
 
-  window.frota_triggerPick=function(idx){
-    const fi=document.getElementById('frota-file-input');
-    fi._slot=idx; fi.value=''; fi.click();
-  };
-
   document.addEventListener('DOMContentLoaded',function(){
     const fi=document.getElementById('frota-file-input');
-    if(!fi) return;
-    fi.addEventListener('change',function(e){
-      const files=Array.from(e.target.files||[]);
-      if(!files.length) return;
-      if(files.length===1&&this._slot!=null) frota_assignSlot(this._slot,files[0]);
-      else frota_distributeFiles(files);
-      this._slot=null;
+    const drop=document.getElementById('frota-drop');
+    if(!fi||!drop) return;
+    drop.addEventListener('click',()=>{fi.value='';fi.click();});
+    drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.value='';fi.click();}});
+    fi.addEventListener('change',e=>{frota_adicionar(Array.from(e.target.files||[]));fi.value='';});
+    drop.addEventListener('dragover', e=>{e.preventDefault();drop.classList.add('is-over');});
+    drop.addEventListener('dragleave',e=>{e.preventDefault();drop.classList.remove('is-over');});
+    drop.addEventListener('drop',e=>{
+      e.preventDefault();drop.classList.remove('is-over');
+      frota_adicionar(Array.from(e.dataTransfer.files||[]));
     });
-    const slotsEl=document.getElementById('frota-slots');
-    const dzHint=document.getElementById('frota-dz-hint');
-    if(slotsEl){
-      ['dragenter','dragover'].forEach(ev=>slotsEl.addEventListener(ev,e=>{
-        e.preventDefault();e.stopPropagation();
-        if(dzHint) dzHint.style.color='var(--accent)';
-      }));
-      ['dragleave','drop'].forEach(ev=>slotsEl.addEventListener(ev,e=>{
-        e.preventDefault();e.stopPropagation();
-        if(dzHint) dzHint.style.color='var(--text-3)';
-        if(ev==='drop') frota_distributeFiles(Array.from(e.dataTransfer.files||[]));
-      }));
-    }
   });
 
-  function frota_distributeFiles(files){
-    let idx=0;
+  /* Adiciona à lista (ignora extensão inválida e nome+tamanho repetidos). */
+  function frota_adicionar(files){
+    const invalidos=[];
     for(const f of files){
-      while(idx<3&&frota_slotFiles[idx]!==null) idx++;
-      if(idx>=3) break;
-      frota_assignSlot(idx,f); idx++;
+      if(!/\.(xlsx|xls)$/i.test(f.name)){invalidos.push(f.name);continue;}
+      if(frota_files.some(x=>x.name===f.name&&x.size===f.size)) continue;
+      frota_files.push(f);
     }
-  }
-
-  function frota_assignSlot(idx,file){
-    if(!/\.(xlsx|xls)$/i.test(file.name)){
-      frota_showAlert(`O arquivo <b>${escHtml(file.name)}</b> não é um Excel válido (.xlsx ou .xls).`);
-      return;
-    }
-    frota_slotFiles[idx]=file;
-    frota_renderSlot(idx);
+    if(invalidos.length) frota_showAlert(`Ignorado(s) por não ser Excel (.xlsx/.xls): <b>${invalidos.map(escHtml).join('</b>, <b>')}</b>.`);
+    else frota_hideAlert();
+    frota_renderLista();
     frota_updateBtn();
-    frota_hideAlert();
+    frota_resetResultado();
   }
 
-  window.frota_removeSlot=function(idx,e){
-    if(e) e.stopPropagation();
-    frota_slotFiles[idx]=null;
-    frota_renderSlot(idx);
+  window.frota_remover=function(idx){
+    frota_files.splice(idx,1);
+    frota_renderLista();
     frota_updateBtn();
     frota_resetResultado();
   };
 
-  function frota_renderSlot(idx){
-    const el=document.querySelector(`.frota-slot[data-slot="${idx}"]`);
-    if(!el) return;
-    const file=frota_slotFiles[idx];
-    /* o slot é um controle acessível: mantém role/tabindex/aria-label
-       nos dois estados, senão perde o acesso por teclado ao ser preenchido */
-    el.setAttribute('role','button');
-    el.setAttribute('tabindex','0');
-    el.setAttribute('aria-label',`Selecionar arquivo ${idx+1}`);
-    if(file){
-      el.classList.add('is-filled');
-      el.removeAttribute('onclick');
-      el.innerHTML=`
-        <span class="drop__hint">ARQUIVO ${idx+1}</span>
-        <svg><use href="#ic-check"/></svg>
-        <span class="drop__main" style="font-size:var(--fs-12);word-break:break-all;">${escHtml(file.name)}</span>
-        <button type="button" class="btn btn--sm btn--danger" onclick="frota_removeSlot(${idx},event)">remover</button>`;
-    } else {
-      el.classList.remove('is-filled');
-      el.setAttribute('onclick',`frota_triggerPick(${idx})`);
-      el.innerHTML=`
-        <span class="drop__hint">ARQUIVO ${idx+1}</span>
-        <svg><use href="#ic-file"/></svg>
-        <span class="drop__hint">Clique ou arraste</span>`;
-    }
+  function frota_renderLista(){
+    const wrap=document.getElementById('frota-list-wrap');
+    const body=document.getElementById('frota-list-body');
+    if(!wrap||!body) return;
+    body.innerHTML='';
+    frota_files.forEach((f,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="num">${i+1}</td><td style="word-break:break-all;">${escHtml(f.name)}</td>
+        <td style="text-align:right;"><button type="button" class="btn btn--sm btn--danger" onclick="frota_remover(${i})">Remover</button></td>`;
+      body.appendChild(tr);
+    });
+    wrap.style.display=frota_files.length?'block':'none';
+    const lbl=document.getElementById('frota-step-files');
+    if(lbl) lbl.textContent=frota_files.length?`Arquivos (${frota_files.length})`:'Arquivos';
   }
 
   function frota_updateBtn(){
-    const ok=frota_slotFiles.every(f=>f!==null);
     const btn=document.getElementById('frota-process-btn');
-    if(btn) btn.disabled=!ok;
-    [1,2,3].forEach(i=>frota_dot(`frota-dot-${i}`,frota_slotFiles[i-1]?'done':null));
+    if(btn) btn.disabled=frota_files.length===0;
+    frota_dot('frota-dot-files',frota_files.length?'done':null);
   }
 
   function frota_resetResultado(){
@@ -1877,8 +1883,8 @@ function val_baixar(tipo){
   }
 
   window.frota_resetTudo=function(){
-    frota_slotFiles=[null,null,null];
-    [0,1,2].forEach(i=>frota_renderSlot(i));
+    frota_files=[];
+    frota_renderLista();
     frota_updateBtn();
     frota_resetResultado();
     frota_hideAlert();
@@ -1926,15 +1932,17 @@ function val_baixar(tipo){
     const btn=document.getElementById('frota-process-btn');
     if(btn) btn.disabled=true;
     try{
+      if(!frota_files.length) throw new Error('Selecione pelo menos um arquivo.');
       let unified=[];
-      for(let i=0;i<3;i++){
-        frota_dot(`frota-dot-${i+1}`,'active');
-        frota_setProgress(Math.round((i/3)*55),`Lendo arquivo ${['A','B','C'][i]}...`);
-        await wait(200);
-        const rows=await frota_lerExcel(frota_slotFiles[i]);
-        unified=unified.concat(frota_validarExtrair(rows,frota_slotFiles[i].name));
-        frota_dot(`frota-dot-${i+1}`,'done');
+      const n=frota_files.length;
+      frota_dot('frota-dot-files','active');
+      for(let i=0;i<n;i++){
+        frota_setProgress(Math.round((i/n)*55),`Lendo arquivo ${i+1} de ${n}: ${frota_files[i].name}`);
+        await wait(120);
+        const rows=await frota_lerExcel(frota_files[i]);
+        unified=unified.concat(frota_validarExtrair(rows,frota_files[i].name));
       }
+      frota_dot('frota-dot-files','done');
       frota_dot('frota-dot-merge','active');
       frota_setProgress(65,`Unificando ${unified.length} linhas...`);
       await wait(300);
@@ -1957,7 +1965,7 @@ function val_baixar(tipo){
       frota_resetResultado();
       frota_showAlert(`<strong>Erro:</strong> ${escHtml(err.message)}`);
     }finally{
-      if(btn) btn.disabled=!frota_slotFiles.every(f=>f!==null);
+      if(btn) btn.disabled=frota_files.length===0;
     }
   };
 

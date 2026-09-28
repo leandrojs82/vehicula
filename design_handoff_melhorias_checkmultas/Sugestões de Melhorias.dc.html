@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body { margin: 0; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+<div style="background:#14161a; color:#e6e8eb; font-family:Inter,sans-serif; min-height:100vh; padding:56px 40px 72px; display:flex; flex-direction:column; gap:40px; align-items:center;">
+  <div style="max-width:1100px; width:100%; text-align:center;">
+    <div style="color:#ff5b1f; font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px;">CheckMultas · Ferramentas</div>
+    <h1 style="font-size:28px; font-weight:700; margin:0;">Modelos das sugestões de melhoria</h1>
+  </div>
+
+  <div style="max-width:1100px; width:100%; display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;">
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">🗂️</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Navegação agrupada</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Labels de seção ("Placas", "Dados") e favoritos fixos no topo do sidebar</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">🔤</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Nomenclatura consistente</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Mesmo verbo ("Exportar") para a mesma ação em todos os botões</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">📋</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Placeholder com exemplo real</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Mostra o formato esperado (ABC1234) em vez de só instruir</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">🎯</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Diagnóstico inline por posição</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Caractere errado grifado direto na placa, não só num resumo</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">📁</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Unificar N arquivos</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Sem limite fixo em 3 — adiciona quantos arquivos precisar</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">❓</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Explicação da sugestão de VARCHAR</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Tooltip no cabeçalho explica de onde vem o número sugerido</div>
+      </div>
+    </div>
+
+    <div style="background:#1c1f24; border:1px solid #2a2e35; border-radius:20px; padding:40px 28px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px; grid-column:2/3;">
+      <div style="width:88px; height:88px; border-radius:50%; background:rgba(255,91,31,.12); display:flex; align-items:center; justify-content:center; font-size:34px;">✅</div>
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:8px;">Confirmação visual ao copiar</div>
+        <div style="color:#9aa0a8; font-size:14px; line-height:1.5;">Toast confirma a cópia sem exigir clique extra</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

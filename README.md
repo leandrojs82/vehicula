@@ -1,6 +1,6 @@
-# ⚡ CheckMultas · Ferramentas
+# ⚡ Vehicula · Ferramentas
 
-Conjunto de utilitários web para processamento de **placas veiculares**, infrações e dados do sistema CheckMultas. Todas as ferramentas funcionam **100% no navegador** — sem servidor, sem instalação, sem dependências externas além do SheetJS (carregado via CDN).
+Conjunto de utilitários web para processamento de **placas veiculares**, infrações e dados veiculares do Vehicula. Todas as ferramentas funcionam **100% no navegador** — sem servidor, sem instalação, sem dependências externas além do SheetJS (carregado via CDN).
 
 ---
 
@@ -103,10 +103,10 @@ Versão dedicada do Conversor SQL IN para listas de **AITs**: cole uma AIT por l
 
 ### 🚛 Unificar Arquivo
 
-Une até **3 planilhas Excel** de restrição/localização de frota em um único CSV padronizado.
+Une **uma ou mais planilhas Excel** de restrição/localização de frota em um único CSV padronizado.
 
 **Funcionalidades:**
-- Upload por clique ou arrastar e soltar, um slot por arquivo
+- Upload por clique ou arrastar e soltar, com lista dinâmica de arquivos (adicione quantos precisar)
 - Colunas localizadas pelo **nome do cabeçalho**, tolerante a acento, maiúsculas e espaços
 - RENAVAM normalizado para 11 dígitos (apenas números, com zeros à esquerda)
 - Coluna `data_atualizacao` preenchida com a data do processamento
@@ -172,7 +172,7 @@ Estas ferramentas foram desenvolvidas para suportar operações internas com dad
 - **Placas** nos formatos Denatran/tradicional e Mercosul
 - **Dados** no padrão dos sistemas Denatran / RENAVAM
 - **Exportação SQL** compatível com PostgreSQL (`IN (...)` com escape de aspas simples)
-- **CSV** compatível com o formato de importação do sistema CheckMultas
+- **CSV** compatível com o formato de importação do sistema Vehicula
 - **Leitura de CSV** com detecção de codificação: tenta UTF-8 e refaz em Windows-1252 quando encontra caracteres inválidos, preservando acentos de arquivos legados
 
 ---
