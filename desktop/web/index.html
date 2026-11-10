@@ -1,0 +1,2252 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicula</title>
+<script src="vendor/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<style>
+/* === TOKENS === */
+/* ============================================================ */
+:root {
+  /* neutros — dark */
+  --bg-app:      #0b0b0d;
+  --bg-surface:  #121214;
+  --bg-elevated: #191a1d;
+  --bg-hover:    #202126;
+  --text-1:      #f4f4f5;
+  --text-2:      #a1a1aa;
+  --text-3:      #71717a;
+  --border-s:    #232428;
+  --border-m:    #33353a;
+
+  /* marca */
+  --accent:      #ff5b1f;
+  --accent-h:    #ff7340;
+  --accent-soft: rgba(255,91,31,.12);
+  --accent-ring: rgba(255,91,31,.55);
+  --accent-tx:   #ffffff;
+
+  /* semânticas */
+  --ok:       #4ade80;  --ok-soft:   rgba(74,222,128,.12);
+  --err:      #f87171;  --err-soft:  rgba(248,113,113,.12);
+  --warn:     #fbbf24;  --warn-soft: rgba(251,191,36,.12);
+  --blue:     #5b8def;  --blue-soft: rgba(91,141,239,.15);
+
+  /* placas — identidade do Conversor */
+  --plate-trad-bg:#1e2a3a; --plate-trad-bd:#3b82f6; --plate-trad-tx:#93c5fd;
+  --plate-merc-bg:#14302a; --plate-merc-bd:#10b981; --plate-merc-tx:#6ee7b7;
+  --plate-conv-bg:#27272a; --plate-conv-bd:#52525b; --plate-conv-tx:#d4d4d8;
+  --danger-bg:#3a1414; --danger-tx:#fca5a5;
+
+  /* espaçamento */
+  --sp-1:4px; --sp-2:8px;  --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:40px;
+
+  /* tipografia */
+  --font-ui:   "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px;
+  --fs-18:18px; --fs-24:24px; --fs-30:30px;
+
+  /* forma */
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+  --shadow: none;
+  --sidebar-w: 232px;
+}
+[data-theme="light"] {
+  --bg-app:      #fbfbfa;
+  --bg-surface:  #ffffff;
+  --bg-elevated: #f5f5f4;
+  --bg-hover:    #ebebe8;
+  --text-1:      #18181b;
+  --text-2:      #52525b;
+  --text-3:      #8b8b93;
+  --border-s:    #e7e5e4;
+  --border-m:    #d4d4d8;
+
+  --accent:      #ea580c;
+  --accent-h:    #c2410c;
+  --accent-soft: rgba(234,88,12,.10);
+  --accent-ring: rgba(234,88,12,.45);
+
+  --ok:#15803d; --err:#b91c1c; --warn:#b45309; --blue:#1d4ed8;
+  --ok-soft:   rgba(22,163,74,.12);
+  --err-soft:  rgba(220,38,38,.10);
+  --warn-soft: rgba(217,119,6,.12);
+
+  --plate-trad-bg:#dbeafe; --plate-trad-bd:#3b82f6; --plate-trad-tx:#1e40af;
+  --plate-merc-bg:#d1fae5; --plate-merc-bd:#10b981; --plate-merc-tx:#065f46;
+  --plate-conv-bg:#f4f4f5; --plate-conv-bd:#d4d4d8; --plate-conv-tx:#3f3f46;
+  --danger-bg:#fee2e2; --danger-tx:#991b1b;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.06);
+}
+
+/* === RESET === */
+/* ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-ui);
+  font-size:var(--fs-13);
+  font-feature-settings:"cv05" 1;
+  background:var(--bg-app); color:var(--text-1);
+  -webkit-font-smoothing:antialiased;
+  transition:background 200ms,color 200ms;
+}
+code,kbd,pre{font-family:var(--font-mono);}
+table{font-variant-numeric:tabular-nums;}
+button{font-family:inherit;cursor:pointer;}
+textarea,input{font-family:inherit;}
+
+/* === SHELL === (sidebar, topbar, main, home)  */
+/* ============================================================ */
+.shell{display:flex;min-height:100vh;}
+
+/* --- SIDEBAR --- */
+.sidebar{
+  width:var(--sidebar-w);background:var(--bg-surface);
+  border-right:1px solid var(--border-s);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;z-index:50;
+  transition:transform 200ms ease-out;
+}
+.shell.nav-hidden .sidebar{transform:translateX(-100%);}
+.shell.nav-hidden .main{margin-left:0;}
+
+/* Banner do logo — degradê da marca com corte curvo */
+.sidebar-logo{
+  position:relative;overflow:hidden;
+  padding:26px 16px 44px;text-align:center;color:#fff;
+  background:linear-gradient(160deg,var(--accent) 0%,var(--accent-h) 55%,#ffb38a 135%);
+}
+.sidebar-logo::after{
+  content:"";position:absolute;left:-25%;right:-25%;bottom:-46px;height:70px;
+  background:var(--bg-surface);border-radius:50%;transform:rotate(-6deg);
+}
+.logo-text{
+  font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  line-height:1.15;
+}
+.logo-sub{font-size:var(--fs-12);opacity:.92;margin-top:6px;line-height:1.4;}
+
+.sidebar-nav{flex:1;padding:var(--sp-2) var(--sp-2) var(--sp-5);overflow-y:auto;}
+.nav-item{
+  position:relative;display:flex;align-items:center;gap:10px;
+  padding:7px 10px;border-radius:var(--r-sm);
+  font-family:inherit;font-size:var(--fs-12);color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.02em;
+  cursor:pointer;border:none;background:none;width:100%;text-align:left;
+  transition:background 120ms ease-out,color 120ms ease-out;
+}
+.nav-item:hover{background:var(--bg-elevated);color:var(--text-1);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.nav-item.nav-home{margin:var(--sp-2) 0;}
+
+/* Grupos recolhíveis */
+.nav-group{margin-top:var(--sp-2);}
+.nav-group-hd{
+  display:flex;align-items:center;gap:6px;width:100%;
+  padding:6px 4px;border:none;background:none;text-align:left;
+  font-family:inherit;font-size:var(--fs-12);font-weight:500;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.04em;
+  border-radius:var(--r-sm);
+}
+.nav-group-hd:hover{color:var(--text-1);}
+.nav-group-hd svg{width:12px;height:12px;transition:transform 150ms ease-out;}
+.nav-group.open .nav-group-hd svg{transform:rotate(90deg);}
+.nav-group-items{
+  display:none;margin-left:10px;padding-left:6px;
+  border-left:1px solid var(--border-s);
+}
+.nav-group.open .nav-group-items{display:block;}
+.nav-group[hidden]{display:none;}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  transition:margin-left 200ms ease-out;
+}
+
+/* Topbar: menu · home · título · busca · tema */
+.topbar{
+  height:56px;background:color-mix(in srgb,var(--bg-surface) 88%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border-s);
+  display:flex;align-items:center;padding:0 var(--sp-5);
+  position:sticky;top:0;z-index:40;gap:var(--sp-2);
+}
+.tb-icon{
+  display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;
+  background:none;border:none;color:var(--text-2);border-radius:var(--r-md);
+  transition:background 120ms,color 120ms;
+}
+.tb-icon:hover{background:var(--bg-elevated);color:var(--text-1);}
+.tb-icon svg{width:18px;height:18px;}
+.topbar-title{font-size:var(--fs-13);font-weight:600;white-space:nowrap;margin-left:var(--sp-2);}
+.topbar-title:empty{display:none;}
+.topbar-sub{
+  font-size:var(--fs-12);color:var(--text-3);white-space:nowrap;
+  padding-left:var(--sp-3);border-left:1px solid var(--border-s);
+}
+.topbar-sub:empty{display:none;}
+.search{
+  flex:1;display:flex;align-items:center;gap:var(--sp-2);
+  height:36px;padding:0 10px;margin:0 var(--sp-2) 0 var(--sp-3);
+  background:var(--bg-elevated);border:1px solid var(--border-s);border-radius:var(--r-md);
+  color:var(--text-3);transition:border-color 120ms,box-shadow 120ms;min-width:0;
+}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.search svg{width:15px;height:15px;flex-shrink:0;}
+.search input{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  color:var(--text-1);font-size:var(--fs-13);
+}
+.search input::placeholder{color:var(--text-3);}
+.search input::-webkit-search-cancel-button{display:none;}
+.search kbd{
+  font-size:var(--fs-11);color:var(--text-3);
+  border:1px solid var(--border-m);border-radius:4px;padding:1px 6px;
+  white-space:nowrap;
+}
+.theme-ic[hidden]{display:none;}
+
+/* TELA INICIAL */
+.home-screen{padding:var(--sp-6) var(--sp-6) var(--sp-8);}
+.home-banner{
+  max-width:480px;border-radius:var(--r-md);padding:var(--sp-5);
+  color:#fff;margin-bottom:var(--sp-7);
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent-h) 60%,#ffb38a 150%);
+}
+.home-banner>svg{width:34px;height:34px;margin-bottom:var(--sp-4);opacity:.95;}
+.home-banner h1{font-size:var(--fs-18);font-weight:700;margin-bottom:var(--sp-1);letter-spacing:-.01em;}
+.home-banner p{font-size:var(--fs-13);line-height:1.55;opacity:.95;}
+.home-banner p svg{width:12px;height:12px;vertical-align:-2px;}
+.section-title{
+  font-size:var(--fs-13);font-weight:600;color:var(--text-2);
+  margin:0 0 var(--sp-3);
+}
+.cards-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:var(--sp-3);margin-bottom:var(--sp-7);
+}
+.home-card{
+  position:relative;background:var(--bg-surface);border:1px solid var(--border-s);
+  border-radius:var(--r-md);padding:var(--sp-5);cursor:pointer;
+  display:flex;flex-direction:column;gap:var(--sp-2);min-height:150px;
+  transition:border-color 160ms ease-out,background 160ms ease-out;
+}
+.home-card:hover,.home-card:focus-visible{border-color:var(--accent);background:var(--bg-elevated);outline:none;}
+.home-card[hidden]{display:none;}
+.card-icon-box{
+  width:40px;height:40px;color:var(--text-2);margin-bottom:var(--sp-1);
+  display:grid;place-items:center;transition:color 160ms ease-out;
+}
+.card-icon-box svg{width:36px;height:36px;}
+.home-card:hover .card-icon-box{color:var(--accent);}
+.home-card h3{font-size:var(--fs-15);font-weight:600;}
+.home-card p{font-size:var(--fs-12);color:var(--text-2);line-height:1.55;flex:1;}
+.fav-btn{
+  position:absolute;top:14px;right:14px;
+  width:28px;height:28px;border-radius:50%;border:none;background:none;
+  color:var(--text-3);display:grid;place-items:center;opacity:.55;
+  transition:opacity 120ms,color 120ms,background 120ms;
+}
+.fav-btn svg{width:15px;height:15px;}
+.home-card:hover .fav-btn,.fav-btn:focus-visible{opacity:1;}
+.fav-btn:hover{background:var(--bg-hover);color:var(--text-1);}
+.fav-btn[aria-pressed="true"]{opacity:1;color:var(--accent);}
+.fav-btn[aria-pressed="true"] svg{fill:currentColor;}
+.search-empty{color:var(--text-3);font-size:var(--fs-13);padding:var(--sp-4) 0;}
+.search-empty[hidden]{display:none;}
+
+/* PÁGINAS DE APP — container padrão */
+.app-page{display:none;}
+.app-page.active{display:block;}
+.app-wrap{max-width:900px;margin:0 auto;padding:28px 24px 60px;}
+
+/* === COMPONENTES === */
+/* Vocabulário base. As regras de TELAS, que vêm depois, refinam casos pontuais. */
+/* ============================================================ */
+
+/* --- Painel --- */
+.panel{
+  background:var(--bg-surface);border:1px solid var(--border-s);
+  border-radius:var(--r-lg);padding:var(--sp-5);
+  margin-bottom:var(--sp-4);box-shadow:var(--shadow);
+}
+.panel__label{
+  display:block;font-size:var(--fs-11);font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-3);margin-bottom:var(--sp-3);
+}
+
+/* --- Botões --- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);
+  padding:9px var(--sp-4);border-radius:999px;
+  border:1px solid var(--border-m);background:var(--bg-elevated);color:var(--text-1);
+  font-family:inherit;font-size:var(--fs-13);font-weight:500;cursor:pointer;
+  transition:background 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;
+}
+.btn:hover:not(:disabled){background:var(--bg-hover);border-color:var(--border-m);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn--primary{background:var(--accent);border-color:var(--accent);color:var(--accent-tx);}
+.btn--primary:hover:not(:disabled){background:var(--accent-h);border-color:var(--accent-h);}
+.btn--danger{background:transparent;border-color:var(--border-m);color:var(--text-2);}
+.btn--danger:hover:not(:disabled){border-color:var(--err);color:var(--err);background:var(--err-soft);}
+.btn--sm{padding:5px var(--sp-3);font-size:var(--fs-12);}
+.btn--block{width:100%;}
+.btn-row{display:flex;gap:var(--sp-3);flex-wrap:wrap;align-items:center;margin-top:var(--sp-4);}
+
+/* --- Campos --- */
+.field{
+  width:100%;padding:10px var(--sp-3);
+  background:var(--bg-elevated);color:var(--text-1);
+  border:1px solid var(--border-m);border-radius:var(--r-md);
+  font-family:inherit;font-size:var(--fs-13);
+  transition:border-color 150ms ease-out;outline:none;
+}
+.field:hover{border-color:var(--text-3);}
+.field--mono{font-family:var(--font-mono);line-height:1.6;}
+.field--area{min-height:110px;resize:vertical;}
+
+/* --- Tag --- */
+.tag{
+  display:inline-flex;align-items:center;gap:var(--sp-1);
+  padding:2px var(--sp-2);border-radius:999px;
+  font-size:var(--fs-11);font-weight:600;
+  background:var(--bg-elevated);color:var(--text-2);border:1px solid var(--border-s);
+}
+.tag.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent;}
+.tag.err{background:var(--err-soft);color:var(--err);border-color:transparent;}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent;}
+
+/* --- Código inline --- */
+code{
+  font-family:var(--font-mono);font-size:var(--fs-12);
+  color:var(--accent);background:var(--bg-elevated);
+  padding:2px 6px;border-radius:var(--r-sm);
+}
+
+/* --- Mensagem de estado --- */
+.status{
+  display:flex;align-items:flex-start;gap:var(--sp-3);
+  padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);
+  font-size:var(--fs-13);line-height:1.55;margin-bottom:var(--sp-4);
+  border:1px solid transparent;
+}
+.status__icon{width:18px;height:18px;flex-shrink:0;margin-top:1px;}
+.status.info{background:var(--blue-soft);color:var(--blue);}
+.status.ok  {background:var(--ok-soft);color:var(--ok);}
+.status.warn{background:var(--warn-soft);color:var(--warn);}
+.status.err {background:var(--err-soft);color:var(--err);}
+.status.hidden{display:none;}
+.status>div{white-space:pre-wrap;word-wrap:break-word;}
+
+/* --- Tabela --- */
+.table{width:100%;border-collapse:collapse;font-size:var(--fs-13);}
+.table th,.table td{text-align:left;padding:9px var(--sp-3);border-bottom:1px solid var(--border-s);}
+.table th{
+  color:var(--text-3);font-size:var(--fs-11);font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.table td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+.table td.mono{font-family:var(--font-mono);}
+.table td.action{text-align:right;}
+.table tbody tr:last-child td{border-bottom:none;}
+.table tbody tr:hover td{background:var(--bg-elevated);}
+.table tr.is-bad td{background:var(--err-soft);}
+.table-wrap{
+  overflow:auto;max-height:320px;
+  border:1px solid var(--border-s);border-radius:var(--r-md);margin-bottom:var(--sp-4);
+}
+.table-wrap thead th{position:sticky;top:0;background:var(--bg-elevated);z-index:1;}
+
+/* --- Área de upload --- */
+.drop{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--sp-2);text-align:center;cursor:pointer;
+  border:1.5px dashed var(--border-m);border-radius:var(--r-md);
+  padding:var(--sp-7) var(--sp-5);
+  background:var(--bg-elevated);color:var(--text-2);
+  transition:border-color 150ms ease-out,background 150ms ease-out,color 150ms ease-out;
+}
+.drop:hover,.drop.is-over{border-color:var(--accent);color:var(--text-1);background:var(--accent-soft);}
+.drop svg{width:30px;height:30px;stroke:var(--accent);stroke-width:1.5;fill:none;}
+.drop__main{font-size:var(--fs-15);color:var(--text-1);}
+.drop__hint{font-size:var(--fs-12);color:var(--text-3);}
+.drop input[type=file]{display:none;}
+
+/* --- Estado vazio --- */
+.empty{text-align:center;padding:var(--sp-8) var(--sp-5);color:var(--text-3);}
+.empty svg{width:36px;height:36px;opacity:.5;margin-bottom:var(--sp-2);stroke-width:1.5;fill:none;stroke:currentColor;}
+.empty p{font-size:var(--fs-13);}
+
+/* --- Spinner --- */
+.spinner{
+  display:inline-block;width:16px;height:16px;flex-shrink:0;
+  border:2px solid var(--border-m);border-top-color:currentColor;
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+:where(button,a,input,textarea,select,[tabindex]):focus-visible{
+  outline:2px solid var(--accent-ring);
+  outline-offset:2px;
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    transition-duration:.01ms!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+  }
+}
+
+/* === TELAS === (regras específicas por ferramenta)  */
+/* ============================================================ */
+
+/* --- Dicas de entrada (Conversor, SQL IN) --- */
+.input-hint{margin-top:8px;font-size:12px;color:var(--text-3);}
+.input-hint kbd{background:var(--bg-elevated);padding:1px 5px;border-radius:var(--r-sm);border:1px solid var(--border-m);}
+
+/* --- Painel de cópia (Conversor) --- */
+.copy-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.copy-row+.copy-row{margin-top:10px;}
+.copy-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);min-width:100px;}
+
+/* --- Linha de resumo (tags) --- */
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+
+/* --- Cartões de resultado (par de placas) --- */
+.results{display:flex;flex-direction:column;gap:12px;}
+.result-card{background:var(--bg-surface);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow);}
+.pair{display:flex;gap:14px;align-items:flex-end;}
+.plate-slot{flex:1;min-width:0;}
+.plate-slot-label{font-size:11px;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;}
+.plate-box{
+  padding:12px 14px;border-radius:var(--r-md);
+  font-family:"SF Mono",Menlo,Consolas,monospace;
+  font-size:18px;font-weight:600;letter-spacing:2px;text-align:center;border:1px solid;
+}
+.plate-box.is-trad{background:var(--plate-trad-bg);border-color:var(--plate-trad-bd);color:var(--plate-trad-tx);}
+.plate-box.is-merc{background:var(--plate-merc-bg);border-color:var(--plate-merc-bd);color:var(--plate-merc-tx);}
+.plate-box.is-conv{background:var(--plate-conv-bg);border-color:var(--plate-conv-bd);color:var(--plate-conv-tx);}
+.arrow{padding-bottom:12px;color:var(--text-3);display:grid;place-items:center;}
+.arrow svg{width:18px;height:18px;}
+.error-card{background:var(--danger-bg);color:var(--danger-tx);border-radius:var(--r-md);padding:10px 14px;font-family:"SF Mono",monospace;font-size:13px;display:flex;align-items:center;gap:8px;}
+
+/* --- VALIDADOR: grupos válidas / inválidas --- */
+.grupo{margin-bottom:var(--sp-5);}
+.grupo h2{
+  font-size:var(--fs-11);text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:var(--sp-2);padding-bottom:var(--sp-1);
+  border-bottom:1px solid var(--border-s);
+}
+.grupo.validas h2{color:var(--ok);}
+.grupo.invalidas h2{color:var(--err);}
+.grupo .lista{display:flex;flex-direction:column;gap:var(--sp-2);}
+.item{
+  padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);
+  font-size:var(--fs-13);display:flex;align-items:baseline;gap:var(--sp-3);
+  border:1px solid transparent;
+}
+.item.ok{background:var(--ok-soft);border-color:rgba(74,222,128,.25);}
+.item.erro{background:var(--err-soft);border-color:rgba(248,113,113,.25);}
+.linha{flex-shrink:0;font-family:var(--font-mono);color:var(--text-3);min-width:52px;font-variant-numeric:tabular-nums;}
+.placa{font-family:var(--font-mono);font-weight:600;letter-spacing:1px;}
+.info{color:var(--text-2);}
+.sugestao{color:var(--warn);}
+#val-input{min-height:160px;}
+#val-downloads{display:none;gap:10px;margin-top:12px;flex-wrap:wrap;}
+#val-downloads button{margin-top:0;flex:1;}
+/* aditivas, sem !important — escopadas por #val-downloads para vencer
+   a base .btn de COMPONENTES por especificidade */
+#val-downloads .dl-validas{border-color:var(--ok);color:var(--ok);}
+#val-downloads .dl-invalidas{border-color:var(--err);color:var(--err);}
+#val-resumo{margin-top:var(--sp-5);font-size:var(--fs-13);color:var(--text-2);display:none;}
+
+/* --- SQL IN --- */
+.sqlin-box{
+  background:var(--bg-surface);border:1px solid var(--border-s);
+  border-radius:var(--r-md);padding:var(--sp-4);
+  font-family:var(--font-mono);font-size:var(--fs-13);
+  color:var(--text-1);word-break:break-all;white-space:pre-wrap;
+  line-height:1.7;margin-bottom:var(--sp-3);
+}
+
+/* --- JSON → CSV --- */
+.json-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4);}
+.actions-card{display:flex;flex-direction:column;gap:var(--sp-2);}
+@media(max-width:780px){.json-grid{grid-template-columns:1fr;}}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4);}
+.stat{
+  background:var(--bg-surface);border:1px solid var(--border-s);
+  border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);
+}
+.stat__label{
+  font-size:var(--fs-11);color:var(--text-3);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:var(--sp-1);
+}
+.stat__value{
+  font-family:var(--font-mono);font-size:var(--fs-24);font-weight:500;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+}
+details.preview-block{background:var(--bg-surface);border-radius:var(--r-lg);border:1px solid var(--border-s);overflow:hidden;}
+details.preview-block summary{cursor:pointer;padding:16px 22px;font-size:var(--fs-15);font-weight:500;user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+details.preview-block summary::-webkit-details-marker{display:none;}
+details.preview-block summary:hover{background:var(--bg-elevated);}
+details.preview-block summary::after{content:'+';color:var(--text-2);font-size:18px;font-weight:300;transition:transform .2s;}
+details.preview-block[open] summary::after{transform:rotate(45deg);}
+.preview-pre{padding:16px 22px 22px;border-top:1px solid var(--border-s);max-height:320px;overflow:auto;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;line-height:1.65;white-space:pre;color:var(--text-1);margin:0;background:var(--bg-elevated);}
+
+/* --- FROTA — pipeline e progresso --- */
+.pipeline{
+  display:flex;align-items:center;gap:var(--sp-2);
+  padding:var(--sp-4);margin-bottom:var(--sp-5);
+  background:var(--bg-elevated);border:1px solid var(--border-s);border-radius:var(--r-md);
+}
+.pipeline__step{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);flex:1;}
+.pipeline__step span{font-size:var(--fs-11);color:var(--text-3);}
+.pipeline__line{height:1px;flex:.5;background:var(--border-s);margin-bottom:18px;}
+.pipeline__dot{
+  width:30px;height:30px;border-radius:var(--r-sm);
+  background:var(--bg-surface);border:1px solid var(--border-m);
+  display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:var(--fs-12);color:var(--text-3);
+  transition:border-color 200ms ease-out,color 200ms ease-out,background 200ms ease-out;
+}
+.pipeline__dot svg{width:14px;height:14px;}
+.pipeline__dot.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+.pipeline__dot.done{border-color:var(--ok);color:var(--ok);background:var(--ok-soft);}
+.progress{height:5px;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-s);overflow:hidden;}
+.progress__fill{height:100%;width:0;background:var(--accent);border-radius:999px;transition:width 400ms ease-out;}
+
+/* --- CONSOLIDADOR DE ARQUIVOS --- */
+#page-consolidador .drop strong{color:var(--accent);}
+#page-consolidador input[type=file]{display:none;}
+.hint{color:var(--text-3);font-size:var(--fs-12);margin-top:var(--sp-2);}
+
+
+/* === RESPONSIVO === */
+/* ============================================================ */
+@media(max-width:640px){
+  .sidebar,.shell.nav-hidden .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main,.shell.nav-hidden .main{margin-left:0;}
+  .topbar{padding:0 var(--sp-3);}
+  .topbar-title,.topbar-sub{display:none;}
+  .search kbd{display:none;}
+  .home-screen{padding:var(--sp-4);}
+  .app-wrap{padding:var(--sp-5) var(--sp-4) var(--sp-8);}
+  .pair{flex-direction:column;align-items:stretch;}
+  .arrow{transform:rotate(90deg);padding:0;}
+  .json-grid{grid-template-columns:1fr;}
+  .stat-grid{grid-template-columns:repeat(3,1fr);}
+  .pipeline{overflow-x:auto;}
+}
+
+/* ---------- Toast global (confirmação de cópia) ---------- */
+.toast{
+  position:fixed;right:20px;bottom:20px;z-index:100;
+  display:flex;align-items:center;gap:var(--sp-2);
+  padding:10px 14px;border-radius:var(--r-md);
+  background:rgba(74,222,128,.1);border:1px solid #2f5b3f;color:var(--ok);
+  font-size:var(--fs-13);font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  opacity:0;transform:translateY(8px);pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{background:var(--err-soft);border-color:rgba(248,113,113,.45);color:var(--err);}
+.toast svg{width:16px;height:16px;flex-shrink:0;}
+/* Ícone de ajuda em cabeçalhos de tabela (tooltip nativo via title) */
+.th-help{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:15px;height:15px;margin-left:4px;border-radius:50%;
+  border:1px solid var(--border-m);color:var(--text-3);
+  font-size:10px;font-weight:600;line-height:1;cursor:help;vertical-align:middle;
+}
+/* Validador — caractere na posição incorreta grifado na própria placa */
+.placa .pos-err{background:rgba(248,113,171,.25);color:var(--err);border-radius:3px;padding:0 1px;}
+.placa .pos-err-label{margin-left:var(--sp-2);font-size:var(--fs-11);font-weight:500;color:var(--err);letter-spacing:0;}
+</style>
+</head>
+<body class="desktop-compact">
+<header class="desktop-toolbar" aria-label="Barra do Vehicula">
+  <div class="desktop-brand pywebview-drag-region" title="Arraste para mover a barra">
+    <img src="vehicula.svg" alt="" width="35" height="35"><strong>Vehicula</strong>
+  </div>
+  <div class="desktop-apps">
+    <button id="open-preparafrota" data-native disabled onclick="desktopOpenTool('preparafrota')"><span class="app-indicator" aria-hidden="true"></span>PreparaFrota</button>
+    <button id="open-pbix" data-native disabled onclick="desktopOpenTool('pbix')"><span class="app-indicator" aria-hidden="true"></span>PBIX → Excel</button>
+    <button id="desktop-expand" class="desktop-primary" data-native disabled onclick="desktopToggleWorkspace()" aria-expanded="false">Ferramentas</button>
+  </div>
+  <div class="desktop-drag-space pywebview-drag-region"></div>
+  <div class="desktop-window-actions">
+    <button id="desktop-pin" class="desktop-icon" data-native disabled onclick="desktopTogglePin()" aria-label="Manter no topo" aria-pressed="false" title="Manter no topo"><svg viewBox="0 0 24 24"><path d="m8 3 8 0-1 6 3 4v2H6v-2l3-4-1-6ZM12 15v6"/></svg></button>
+    <button id="desktop-settings-button" class="desktop-icon" data-native disabled onclick="desktopSettings()" aria-label="Preferências" title="Preferências"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button>
+    <button class="desktop-icon" data-native disabled onclick="desktopMinimize()" aria-label="Minimizar" title="Minimizar"><svg viewBox="0 0 24 24"><path d="M5 16h14"/></svg></button>
+    <button class="desktop-icon desktop-close" data-native disabled onclick="desktopClose()" aria-label="Fechar Vehicula" title="Fechar Vehicula"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+  </div>
+</header>
+<section id="desktop-preferences" class="desktop-preferences" hidden>
+  <div><strong>Preferências</strong><p>Personalize sua área de trabalho.</p></div>
+  <label for="desktop-theme">Tema</label>
+  <select id="desktop-theme" onchange="desktopChangeTheme(this.value)"><option value="system">Acompanhar o Windows</option><option value="light">Claro</option><option value="dark">Escuro</option></select>
+  <button onclick="desktopSettings()" class="desktop-text-button">Fechar preferências</button>
+</section>
+<div id="desktop-status" role="status" aria-live="polite" hidden></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="ic-conversor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></symbol>
+  <symbol id="ic-validador" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="ic-jsoncsv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 12h8M8 16h5"/></symbol>
+  <symbol id="ic-sqlait" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h6M9 17h6"/></symbol>
+  <symbol id="ic-sqlin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="ic-frota" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M4 17v-4l2-5h12l2 5v4"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></symbol>
+  <symbol id="ic-consolidador" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 12h7M17 8l4 4-4 4"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0l-5-5m5 5l5-5"/><path d="M4 18v1a1 1 0 001 1h14a1 1 0 001-1v-1"/></symbol>
+  <symbol id="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2"/><path d="M18 7l-1 13a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="ic-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16h.01"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5l10 6.5-10 6.5z"/></symbol>
+  <symbol id="ic-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 00-1 1v16a1 1 0 001 1h10a1 1 0 001-1V7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-7.5-10A4.3 4.3 0 0112 7.7a4.3 4.3 0 017.5 2.8c0 5.4-7.5 10-7.5 10z"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="ic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></symbol>
+  <symbol id="ic-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></symbol>
+</svg>
+<div class="shell">
+
+  <!-- ====================================================
+       SIDEBAR
+       ==================================================== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">Vehicula</div>
+      <div class="logo-sub">Ferramentas para placas<br>e dados veiculares</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <button class="nav-item nav-home active" data-id="home" onclick="showPage('home',this)">
+        <svg><use href="#ic-home"/></svg> Início
+      </button>
+
+      <div class="nav-group open" id="navFavGroup" data-group="favoritos" hidden>
+        <button class="nav-group-hd" onclick="toggleGroup(this)" aria-expanded="true">
+          <svg><use href="#ic-chevron"/></svg> Favoritos
+        </button>
+        <div class="nav-group-items" id="navFavItems"></div>
+      </div>
+
+      <div class="nav-group open" data-group="placas">
+        <button class="nav-group-hd" onclick="toggleGroup(this)" aria-expanded="true">
+          <svg><use href="#ic-chevron"/></svg> Placas
+        </button>
+        <div class="nav-group-items">
+        <button class="nav-item" data-id="conversor" onclick="showPage('conversor',this)">
+          <svg><use href="#ic-conversor"/></svg> Conversor de Placas
+        </button>
+        <button class="nav-item" data-id="validador" onclick="showPage('validador',this)">
+          <svg><use href="#ic-validador"/></svg> Validador de Placas
+        </button>
+        </div>
+      </div>
+      <div class="nav-group open" data-group="dados">
+        <button class="nav-group-hd" onclick="toggleGroup(this)" aria-expanded="true">
+          <svg><use href="#ic-chevron"/></svg> Dados
+        </button>
+        <div class="nav-group-items">
+        <button class="nav-item" data-id="jsoncsv" onclick="showPage('jsoncsv',this)">
+          <svg><use href="#ic-jsoncsv"/></svg> JSON → CSV
+        </button>
+        <button class="nav-item" data-id="sqlin" onclick="showPage('sqlin',this)">
+          <svg><use href="#ic-sqlin"/></svg> Conversor SQL IN
+        </button>
+        <button class="nav-item" data-id="sqlait" onclick="showPage('sqlait',this)">
+          <svg><use href="#ic-sqlait"/></svg> SQL IN AIT
+        </button>
+        <button class="nav-item" data-id="frota" onclick="showPage('frota',this)">
+          <svg><use href="#ic-frota"/></svg> Unificar Arquivo
+        </button>
+        <button class="nav-item" data-id="consolidador" onclick="showPage('consolidador',this)">
+          <svg><use href="#ic-consolidador"/></svg> Verificador de Colunas
+        </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ====================================================
+       MAIN
+       ==================================================== -->
+  <div class="main">
+    <div class="topbar">
+      <button class="tb-icon" aria-label="Mostrar ou ocultar menu" onclick="toggleSidebar()">
+        <svg><use href="#ic-menu"/></svg>
+      </button>
+      <button class="tb-icon" aria-label="Início" onclick="showPageByName('home')">
+        <svg><use href="#ic-home"/></svg>
+      </button>
+      <select id="desktop-tool-picker" aria-label="Escolher ferramenta" onchange="showPageByName(this.value)">
+        <option value="home">Todas as ferramentas</option><option value="conversor">Conversor de Placas</option>
+        <option value="validador">Validador de Placas</option><option value="jsoncsv">JSON → CSV</option>
+        <option value="sqlin">SQL IN</option><option value="sqlait">SQL IN AIT</option>
+        <option value="frota">Unificar Arquivo</option><option value="consolidador">Verificador de Colunas</option>
+      </select>
+      <span class="topbar-title" id="topbarTitle"></span>
+      <span class="topbar-sub" id="topbarSub"></span>
+
+      <label class="search">
+        <svg><use href="#ic-search"/></svg>
+        <input type="search" id="toolSearch" placeholder="Pesquisar ferramenta" autocomplete="off" spellcheck="false">
+        <kbd>Ctrl + K</kbd>
+      </label>
+
+      <button class="tb-icon" id="themeToggle" aria-label="Alternar tema" onclick="toggleTheme()">
+        <svg class="theme-ic" id="themeIcSun"><use href="#ic-sun"/></svg>
+        <svg class="theme-ic" id="themeIcMoon" hidden><use href="#ic-moon"/></svg>
+      </button>
+    </div>
+
+    <!-- ===================================================
+         TELA INICIAL
+         =================================================== -->
+    <div id="page-home" class="app-page active">
+      <div class="home-screen">
+        <div class="home-banner">
+          <svg><use href="#ic-bolt"/></svg>
+          <h1>Ferramentas Vehicula</h1>
+          <p>Utilitários para placas, infrações e dados veiculares. Marque com <svg><use href="#ic-heart"/></svg> as que mais usa para tê-las sempre à mão.</p>
+        </div>
+
+        <div id="favSection" hidden>
+          <div class="section-title">Favoritos</div>
+          <div class="cards-grid" id="favGrid"></div>
+        </div>
+
+        <div class="section-title" id="allTitle">Todas as ferramentas</div>
+        <div class="cards-grid" id="allGrid">
+          <div class="home-card" role="button" tabindex="0" data-id="conversor" data-group="placas" onclick="showPageByName('conversor')">
+            <button class="fav-btn" data-id="conversor" aria-pressed="false" aria-label="Favoritar Conversor de Placas" onclick="toggleFav(event,'conversor')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-conversor"/></svg></div>
+            <h3>Conversor de Placas</h3>
+            <p>Converte entre Tradicional (ABC-1234) e Mercosul (ABC1D23) em lote, com exportação SQL IN.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="validador" data-group="placas" onclick="showPageByName('validador')">
+            <button class="fav-btn" data-id="validador" aria-pressed="false" aria-label="Favoritar Validador de Placas" onclick="toggleFav(event,'validador')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-validador"/></svg></div>
+            <h3>Validador de Placas</h3>
+            <p>Valida lotes nos dois formatos com diagnóstico por posição e exportação XLSX separada.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="jsoncsv" data-group="dados" onclick="showPageByName('jsoncsv')">
+            <button class="fav-btn" data-id="jsoncsv" aria-pressed="false" aria-label="Favoritar JSON → CSV" onclick="toggleFav(event,'jsoncsv')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-jsoncsv"/></svg></div>
+            <h3>JSON → CSV</h3>
+            <p>Converte JSON em CSV compatível com Excel e extrai placas em formato SQL IN.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="sqlin" data-group="dados" onclick="showPageByName('sqlin')">
+            <button class="fav-btn" data-id="sqlin" aria-pressed="false" aria-label="Favoritar Conversor SQL IN" onclick="toggleFav(event,'sqlin')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-sqlin"/></svg></div>
+            <h3>Conversor SQL IN</h3>
+            <p>Converte uma lista de valores em cláusula <code>IN (...)</code> pronta para uso em queries SQL.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="sqlait" data-group="dados" onclick="showPageByName('sqlait')">
+            <button class="fav-btn" data-id="sqlait" aria-pressed="false" aria-label="Favoritar SQL IN AIT" onclick="toggleFav(event,'sqlait')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-sqlait"/></svg></div>
+            <h3>SQL IN AIT</h3>
+            <p>Converte uma lista de AITs em cláusula <code>IN ('...')</code> com aspas simples, pronta para a query.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="frota" data-group="dados" onclick="showPageByName('frota')">
+            <button class="fav-btn" data-id="frota" aria-pressed="false" aria-label="Favoritar Unificar Arquivo" onclick="toggleFav(event,'frota')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-frota"/></svg></div>
+            <h3>Unificar Arquivo</h3>
+            <p>Une várias planilhas Excel de restrição/localização em um único CSV padronizado com colunas validadas.</p>
+          </div>
+          <div class="home-card" role="button" tabindex="0" data-id="consolidador" data-group="dados" onclick="showPageByName('consolidador')">
+            <button class="fav-btn" data-id="consolidador" aria-pressed="false" aria-label="Favoritar Verificador de Colunas" onclick="toggleFav(event,'consolidador')"><svg><use href="#ic-heart"/></svg></button>
+            <div class="card-icon-box"><svg><use href="#ic-consolidador"/></svg></div>
+            <h3>Verificador de Colunas</h3>
+            <p>Une múltiplos .txt, .csv e .xlsx em um único conjunto, com validação de estrutura e sugestão de VARCHAR.</p>
+          </div>
+        </div>
+        <p class="search-empty" id="searchEmpty" hidden></p>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         APP 1 — CONVERSOR DE PLACAS
+         =================================================== -->
+    <div id="page-conversor" class="app-page">
+      <div class="app-wrap">
+        <section class="panel">
+          <label class="panel__label" for="conv-input">Cole as placas aqui</label>
+          <textarea id="conv-input" class="field field--area field--mono"
+            placeholder="'HKT0416','RGA2D75','RGA3A02','PTG8995'"
+            spellcheck="false" autocomplete="off"></textarea>
+          <div class="input-hint">Aceita vírgulas, aspas e quebras de linha · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> para converter</div>
+          <div class="btn-row">
+            <button class="btn btn--primary" id="conv-btn-convert">
+              <svg><use href="#ic-conversor"/></svg>
+              Converter
+            </button>
+            <button class="btn" id="conv-btn-clear">
+              <svg><use href="#ic-trash"/></svg>
+              Limpar
+            </button>
+          </div>
+        </section>
+
+        <div class="status err hidden" id="conv-error"></div>
+
+        <section class="panel" id="conv-copy-panel" style="display:none;">
+          <div class="copy-row">
+            <span class="copy-label">Originais</span>
+            <button class="btn btn--sm" id="copy-orig-list-btn">Exportar Lista</button>
+            <button class="btn btn--sm" id="copy-orig-sql-btn">Exportar SQL IN</button>
+          </div>
+          <div class="copy-row">
+            <span class="copy-label">Convertidas</span>
+            <button class="btn btn--sm" id="copy-conv-list-btn">Exportar Lista</button>
+            <button class="btn btn--sm" id="copy-conv-sql-btn">Exportar SQL IN</button>
+          </div>
+        </section>
+
+        <div class="summary" id="conv-summary" style="display:none;"></div>
+        <div class="results" id="conv-results"></div>
+        <div class="empty" id="conv-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12" rx="2"/>
+            <line x1="7" y1="12" x2="9" y2="12"/><line x1="11" y1="12" x2="13" y2="12"/><line x1="15" y1="12" x2="17" y2="12"/>
+          </svg>
+          <p>Cole suas placas e clique em Converter</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         APP 2 — VALIDADOR DE PLACAS
+         =================================================== -->
+    <div id="page-validador" class="app-page">
+      <div class="app-wrap">
+        <label class="panel__label" for="val-input">Cole uma placa por linha — antigo (AAA0000) ou Mercosul (AAA0A00)</label>
+        <textarea id="val-input" class="field field--area field--mono"
+          placeholder="ABC1234&#10;ABC1D23&#10;XYZ12A3"
+          spellcheck="false" autocomplete="off"></textarea>
+        <div class="input-hint">Uma placa por linha · 7 caracteres · antigo <kbd>AAA0000</kbd> ou Mercosul <kbd>AAA0A00</kbd> · hífens e espaços são ignorados</div>
+        <div class="btn-row">
+          <button class="btn btn--primary" onclick="val_verificar()">Verificar todas</button>
+          <button class="btn" onclick="val_limpar()">Limpar</button>
+        </div>
+
+        <div id="val-downloads" style="display:none;">
+          <button class="btn btn--sm dl-validas"   onclick="val_baixar('validas')"><svg><use href="#ic-download"/></svg> Exportar Válidas (.xlsx)</button>
+          <button class="btn btn--sm dl-invalidas" onclick="val_baixar('invalidas')"><svg><use href="#ic-download"/></svg> Exportar Inválidas (.xlsx)</button>
+        </div>
+
+        <div id="val-resumo"></div>
+        <div id="val-resultado" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         APP 3 — JSON → CSV
+         =================================================== -->
+    <div id="page-jsoncsv" class="app-page">
+      <div class="app-wrap">
+        <div class="json-grid">
+          <div class="panel" style="margin-bottom:0;">
+            <div style="margin-bottom:12px;">
+              <span class="panel__label">JSON de entrada</span>
+              <p class="hint">Objeto, array, ou múltiplos objetos em sequência</p>
+            </div>
+            <textarea id="json-input" class="field field--area field--mono" style="min-height:280px;" placeholder='{&#10;  "placa": "EVW7J83",&#10;  "chassi": "8AWBJ6008RA816591",&#10;  "renavam": "01390002397",&#10;  "empresa": "RAC",&#10;  "uf": "SP"&#10;}'></textarea>
+            <p style="font-size:12px;color:var(--text-3);margin-top:8px;">Aceita <code>{…}</code>, <code>[ {…}, {…} ]</code>, ou objetos em sequência</p>
+          </div>
+
+          <div class="actions-card">
+            <button class="btn btn--primary btn--block" id="json-btn-process" style="height:56px;">
+              <svg><use href="#ic-play"/></svg> Processar
+            </button>
+            <button class="btn btn--block" id="json-btn-download" disabled>
+              <svg><use href="#ic-download"/></svg> Exportar CSV
+            </button>
+            <button class="btn btn--block" id="json-btn-sql" disabled>
+              <svg><use href="#ic-copy"/></svg> Exportar SQL IN
+            </button>
+            <button class="btn btn--block" id="json-btn-sample">
+              <svg><use href="#ic-file"/></svg> Carregar exemplo
+            </button>
+            <button class="btn btn--danger btn--block" id="json-btn-clear">
+              <svg><use href="#ic-trash"/></svg> Limpar
+            </button>
+          </div>
+        </div>
+
+        <div id="json-status" class="status hidden"></div>
+
+        <div id="json-stats" class="stat-grid" style="display:none;">
+          <div class="stat"><div class="stat__label">Registros</div><div class="stat__value" id="json-count-records">0</div></div>
+          <div class="stat"><div class="stat__label">Colunas</div><div class="stat__value" id="json-count-cols">0</div></div>
+          <div class="stat"><div class="stat__label">Placas únicas</div><div class="stat__value" id="json-count-plates">0</div></div>
+        </div>
+
+        <details class="preview-block" id="json-preview-block" style="display:none;">
+          <summary>Pré-visualização do CSV</summary>
+          <pre class="preview-pre" id="json-csv-preview"></pre>
+        </details>
+      </div>
+    </div>
+
+  <!-- ===================================================
+         APP 5 — CONVERSOR SQL IN
+         =================================================== -->
+    <div id="page-sqlin" class="app-page">
+        <div class="app-wrap" style="max-width:620px;">
+        <div class="panel">
+          <label class="panel__label" for="sqlin-ta">Cole os valores aqui</label>
+          <textarea class="field field--area field--mono" id="sqlin-ta" rows="6"
+            placeholder="TG00420009&#10;TG00395665&#10;TG00123456"
+            spellcheck="false" autocomplete="off"></textarea>
+          <div class="input-hint">
+            Aceita valores separados por quebra de linha &middot;
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> para converter
+          </div>
+          <div class="btn-row">
+            <button class="btn btn--primary" onclick="sqlin_convert()">Converter</button>
+            <button class="btn" onclick="sqlin_clear()">Limpar</button>
+          </div>
+        </div>
+
+        <!-- estado vazio -->
+        <div class="empty" id="sqlin-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+          <p>Cole seus valores e clique em Converter</p>
+        </div>
+
+        <!-- resultado -->
+        <div id="sqlin-output" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span class="panel__label" style="margin:0;">Resultado SQL</span>
+            <span id="sqlin-badge" class="tag"></span>
+          </div>
+          <div id="sqlin-box" class="sqlin-box"></div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn" id="sqlin-copy-btn" onclick="sqlin_copy()"><svg><use href="#ic-copy"/></svg> Exportar SQL IN</button>
+          </div>
+        </div>
+
+      </div><!-- /app-wrap -->
+    </div><!-- /page-sqlin -->
+
+    <!-- ===================================================
+         APP 5b — SQL IN AIT
+         =================================================== -->
+    <div id="page-sqlait" class="app-page">
+      <div class="app-wrap" style="max-width:620px;">
+        <div class="panel">
+          <label class="panel__label" for="sqlait-ta">Cole as AITs aqui</label>
+          <textarea class="field field--area field--mono" id="sqlait-ta" rows="6"
+            placeholder="AB12345678&#10;AB12345679&#10;AB12345680"
+            spellcheck="false" autocomplete="off"></textarea>
+          <div class="input-hint">
+            Aceita valores separados por quebra de linha &middot;
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> para converter
+          </div>
+          <div class="btn-row">
+            <button class="btn btn--primary" onclick="sqlait_convert()">Converter</button>
+            <button class="btn" onclick="sqlait_clear()">Limpar</button>
+          </div>
+        </div>
+
+        <!-- estado vazio -->
+        <div class="empty" id="sqlait-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+          <p>Cole as AITs e clique em Converter</p>
+        </div>
+
+        <!-- resultado -->
+        <div id="sqlait-output" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span class="panel__label" style="margin:0;">Resultado SQL</span>
+            <span id="sqlait-badge" class="tag"></span>
+          </div>
+          <div id="sqlait-box" class="sqlin-box"></div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn" id="sqlait-copy-btn" onclick="sqlait_copy()"><svg><use href="#ic-copy"/></svg> Exportar SQL IN</button>
+          </div>
+        </div>
+
+      </div><!-- /app-wrap -->
+    </div><!-- /page-sqlait -->
+
+    <!-- ===================================================
+         APP 6 — UNIFICADOR DE FROTA IMPEDIMENTO
+         =================================================== -->
+    <div id="page-frota" class="app-page">
+      <div class="app-wrap" style="max-width:780px; padding-top:8px;">
+
+        <div class="panel">
+          <p style="font-size:var(--fs-13);color:var(--text-2);margin-bottom:var(--sp-5);">
+            Envie uma ou mais planilhas Excel de restrição/localização. O app valida as colunas, une e gera um CSV padronizado.
+          </p>
+
+          <!-- pipeline visual -->
+          <div class="pipeline">
+            <div class="pipeline__step">
+              <div id="frota-dot-files" class="pipeline__dot"><svg><use href="#ic-file"/></svg></div>
+              <span id="frota-step-files">Arquivos</span>
+            </div>
+            <div class="pipeline__line"></div>
+            <div class="pipeline__step">
+              <div id="frota-dot-merge" class="pipeline__dot"><svg><use href="#ic-consolidador"/></svg></div>
+              <span>Unificar</span>
+            </div>
+            <div class="pipeline__line"></div>
+            <div class="pipeline__step">
+              <div id="frota-dot-csv" class="pipeline__dot"><svg><use href="#ic-download"/></svg></div>
+              <span>CSV</span>
+            </div>
+          </div>
+
+          <!-- upload múltiplo (mesmo padrão do Verificador de Colunas) -->
+          <div class="drop" id="frota-drop" role="button" tabindex="0" aria-label="Selecionar planilhas para unificar">
+            <svg><use href="#ic-upload"/></svg>
+            <span class="drop__main">Arraste ou <strong>clique para escolher</strong> planilhas</span>
+            <span class="drop__hint">.xlsx · .xls — quantos arquivos precisar</span>
+          </div>
+          <input type="file" id="frota-file-input" accept=".xlsx,.xls" multiple style="display:none;">
+
+          <!-- lista dinâmica de arquivos -->
+          <div id="frota-list-wrap" class="table-wrap" style="display:none;margin-top:var(--sp-4);margin-bottom:var(--sp-4);">
+            <table class="table">
+              <thead><tr><th>#</th><th>Arquivo</th><th></th></tr></thead>
+              <tbody id="frota-list-body"></tbody>
+            </table>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn--primary" id="frota-process-btn" disabled onclick="frota_processar()">
+              <svg><use href="#ic-play"/></svg> Processar e Unificar
+            </button>
+            <button class="btn btn--danger" onclick="frota_resetTudo()">
+              <svg><use href="#ic-trash"/></svg> Limpar
+            </button>
+          </div>
+
+          <!-- barra de progresso -->
+          <div id="frota-progress-wrap" style="display:none;margin-top:var(--sp-4);">
+            <div class="progress">
+              <div id="frota-progress-fill" class="progress__fill"></div>
+            </div>
+            <div id="frota-progress-step" style="font-size:var(--fs-11);color:var(--text-3);margin-top:var(--sp-2);text-align:center;">—</div>
+          </div>
+
+          <!-- alerta de erro -->
+          <div id="frota-alert" class="status err hidden"></div>
+
+          <!-- resultado -->
+          <div id="frota-result" style="display:none;margin-top:var(--sp-4);">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px var(--sp-4);background:var(--bg-elevated);border:1px solid var(--border-s);border-radius:var(--r-md);margin-bottom:var(--sp-3);font-size:var(--fs-13);">
+              <span style="color:var(--text-2);">Linhas unificadas</span>
+              <strong id="frota-stat-rows" style="color:var(--accent);font-family:var(--font-mono);">0</strong>
+            </div>
+            <button class="btn btn--primary btn--block" onclick="frota_baixarCSV()">
+              <svg><use href="#ic-download"/></svg> Exportar CSV Unificado
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================================================
+         APP 7 — CONSOLIDADOR DE ARQUIVOS
+         =================================================== -->
+    <div id="page-consolidador" class="app-page">
+      <div class="app-wrap" style="max-width:820px;">
+
+        <!-- 1 · UPLOAD -->
+        <div class="panel">
+          <span class="panel__label">1 · Selecionar arquivos</span>
+          <div class="drop" id="cons-drop" role="button" tabindex="0" aria-label="Selecionar arquivos para consolidar">
+            <svg><use href="#ic-upload"/></svg>
+            <span class="drop__main">Arraste ou <strong>clique para escolher</strong> arquivos</span>
+            <span class="drop__hint">.txt · .csv · .xlsx — múltiplos permitidos</span>
+          </div>
+          <input type="file" id="cons-file-input" multiple accept=".txt,.csv,.xlsx">
+          <div class="btn-row" id="cons-clear-row" style="display:none;">
+            <button class="btn btn--danger" onclick="cons_limparTudo()">
+              <svg><use href="#ic-trash"/></svg> Limpar todos os arquivos
+            </button>
+          </div>
+        </div>
+
+        <!-- 2 · RELATÓRIO + VALIDAÇÃO -->
+        <div class="panel" id="cons-report-card" style="display:none;">
+          <span class="panel__label">2 · Metadados e validação</span>
+          <div id="cons-alert-box"></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Arquivo</th><th>Linhas</th><th>Colunas</th><th>Status</th><th></th></tr></thead>
+              <tbody id="cons-report-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAMANHO MÁXIMO POR COLUNA -->
+        <div class="panel" id="cons-width-card" style="display:none;">
+          <span class="panel__label">Tamanho máximo por coluna</span>
+          <label style="font-size:var(--fs-12);color:var(--text-2);display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3);">
+            <input type="checkbox" id="cons-has-header" onchange="cons_render()"> 1ª linha é cabeçalho
+          </label>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>#</th><th>Coluna</th><th>Máx. caracteres</th><th>Sugestão SQL <span class="th-help" title="Maior comprimento encontrado na coluna, entre todos os arquivos, com margem de 20% (arredondada para cima). Ex.: máx. 10 → VARCHAR(12)." tabindex="0" aria-label="Como a sugestão é calculada">?</span></th></tr></thead>
+              <tbody id="cons-width-body"></tbody>
+            </table>
+          </div>
+          <p class="hint">Comprimento máximo de caractere entre todos os arquivos compatíveis. Use para dimensionar o campo no banco.</p>
+        </div>
+
+        <!-- 3 · EXPORTAÇÃO -->
+        <div class="panel" id="cons-export-card" style="display:none;">
+          <span class="panel__label">3 · Exportar consolidado</span>
+          <input type="text" class="field" id="cons-fname" placeholder="Nome do arquivo (opcional)" style="margin-bottom:var(--sp-3);">
+          <div class="btn-row" style="margin-top:0;align-items:center;">
+            <select class="field" id="cons-fmt" style="width:auto;">
+              <option value="csv">CSV</option>
+              <option value="xlsx">Excel (.xlsx)</option>
+              <option value="txt">TXT (tab)</option>
+            </select>
+            <button class="btn btn--primary" onclick="cons_exportar()">
+              <svg><use href="#ic-download"/></svg> Exportar consolidado
+            </button>
+            <span class="hint" id="cons-export-hint" style="margin-top:0;"></span>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-consolidador -->
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<div class="toast" id="cm-toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+
+function cm_escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[character]));
+}
+
+/* ============================================================
+   TOAST GLOBAL — feedback de cópia/ação (usado por todos os apps)
+   ============================================================ */
+let cm_toastTimer=null;
+function mostrarToast(msg, tipo='ok', ms=2500){
+  const el=document.getElementById('cm-toast');
+  if(!el) return;
+  const icon=tipo==='err'?'#ic-alert':'#ic-check';
+  el.innerHTML=`<svg><use href="${icon}"/></svg><span>${msg}</span>`;
+  el.classList.toggle('err', tipo==='err');
+  el.classList.add('show');
+  clearTimeout(cm_toastTimer);
+  cm_toastTimer=setTimeout(()=>el.classList.remove('show'), ms);
+}
+function toastCopiado(){ mostrarToast('Copiado para a área de transferência'); }
+
+/* ============================================================
+   NAVEGAÇÃO E TEMA
+   ============================================================ */
+function showPage(id, navBtn) {
+  document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.id === id));
+  const titles = {
+    home: ['',''],
+    conversor: ['Conversor de Placas','Tradicional ↔ Mercosul'],
+    validador: ['Validador de Placas','em lote'],
+    jsoncsv:   ['JSON → CSV','Converter e exportar'],
+    sqlin:     ['Conversor SQL IN','Lista → cláusula IN'],
+    sqlait:    ['SQL IN AIT','Lista de AITs → cláusula IN'],
+    frota:     ['Unificar Arquivo','N planilhas → 1 CSV'],
+    consolidador: ['Verificador de Colunas','txt · csv · xlsx → 1 arquivo']
+  };
+  const [t, s] = titles[id] || ['',''];
+  document.getElementById('topbarTitle').textContent = t;
+  document.getElementById('topbarSub').textContent = s;
+  if (window.innerWidth <= 640) document.getElementById('sidebar').classList.remove('open');
+  window.scrollTo(0, 0);
+}
+function showPageByName(id) {
+  showPage(id, null);
+}
+function toggleSidebar() {
+  if (window.innerWidth <= 640) document.getElementById('sidebar').classList.toggle('open');
+  else document.querySelector('.shell').classList.toggle('nav-hidden');
+}
+function toggleGroup(btn) {
+  const open = btn.parentElement.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+}
+
+/* Enter/Espaço ativam os controles não-nativos (cards da home e
+   áreas de upload), que já expõem role="button" e tabindex="0".
+   Controles nativos aninhados (ex.: o botão "remover" dentro de um slot
+   preenchido) mantêm o comportamento próprio e são ignorados aqui. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (!e.target || typeof e.target.closest !== 'function') return;
+  if (e.target.closest('button, a, input, textarea, select')) return;
+  const card = e.target.closest('.home-card, .drop');
+  if (!card) return;
+  e.preventDefault();
+  card.click();
+});
+
+/* Busca de ferramentas (topbar) — filtra os cards da home */
+const toolSearch = document.getElementById('toolSearch');
+const normalize = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function filterTools(q) {
+  const term = normalize(q.trim());
+  let shown = 0;
+  document.querySelectorAll('#allGrid .home-card').forEach(c => {
+    const hit = !term || normalize(c.textContent).includes(term);
+    c.hidden = !hit;
+    if (hit) shown++;
+  });
+  document.getElementById('favSection').hidden = !!term || !getFavs().length;
+  document.getElementById('allTitle').textContent = term ? `Resultados para "${q.trim()}"` : 'Todas as ferramentas';
+  const empty = document.getElementById('searchEmpty');
+  empty.hidden = shown > 0;
+  empty.textContent = `Nenhuma ferramenta corresponde a "${q.trim()}". Tente outro termo.`;
+}
+toolSearch.addEventListener('input', () => {
+  if (!document.getElementById('page-home').classList.contains('active')) showPageByName('home');
+  filterTools(toolSearch.value);
+});
+toolSearch.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = document.querySelector('#allGrid .home-card:not([hidden])');
+    if (first) { toolSearch.value = ''; filterTools(''); first.click(); }
+  }
+  if (e.key === 'Escape') { toolSearch.value = ''; filterTools(''); toolSearch.blur(); }
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault(); toolSearch.focus(); toolSearch.select();
+  }
+});
+
+/* Favoritos — persistidos em localStorage, exibidos na home e no menu */
+const FAV_KEY = 'cm-favs';
+let memFavs = null; /* fallback quando o storage está indisponível */
+function getFavs() {
+  if (memFavs) return memFavs;
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; }
+}
+function toggleFav(e, id) {
+  e.stopPropagation();
+  let favs = getFavs();
+  favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+  memFavs = favs;
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch {}
+  renderFavs();
+}
+function renderFavs() {
+  const favs = getFavs();
+  document.querySelectorAll('#allGrid .fav-btn').forEach(b => {
+    const on = favs.includes(b.dataset.id);
+    b.setAttribute('aria-pressed', on);
+    b.setAttribute('aria-label', (on ? 'Remover dos favoritos: ' : 'Favoritar ') + b.closest('.home-card').querySelector('h3').textContent);
+  });
+  const favGrid = document.getElementById('favGrid');
+  favGrid.innerHTML = '';
+  favs.forEach(id => {
+    const src = document.querySelector(`#allGrid .home-card[data-id="${id}"]`);
+    if (src) favGrid.appendChild(src.cloneNode(true));
+  });
+  document.getElementById('favSection').hidden = !favs.length || !!toolSearch.value.trim();
+  const navFav = document.getElementById('navFavItems');
+  navFav.innerHTML = '';
+  favs.forEach(id => {
+    const src = document.querySelector(`.nav-group:not(#navFavGroup) .nav-item[data-id="${id}"]`);
+    if (src) navFav.appendChild(src.cloneNode(true));
+  });
+  document.getElementById('navFavGroup').hidden = !favs.length;
+}
+renderFavs();
+
+/* Tema */
+(function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem('cm-theme'); } catch {}
+  saved = saved || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+  applyTheme(saved);
+})();
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('cm-theme', t); } catch {}
+  const sun = document.getElementById('themeIcSun'), moon = document.getElementById('themeIcMoon');
+  if (sun)  sun.hidden  = t !== 'dark';
+  if (moon) moon.hidden = t !== 'light';
+}
+function toggleTheme(){
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
+/* ============================================================
+   APP 1 — CONVERSOR DE PLACAS
+   Lógica idêntica ao conversor_placas.html original
+   ============================================================ */
+(function(){
+  const DIGIT_TO_LETTER = ['A','B','C','D','E','F','G','H','I','J'];
+  const LETTER_TO_DIGIT = {A:'0',B:'1',C:'2',D:'3',E:'4',F:'5',G:'6',H:'7',I:'8',J:'9'};
+  let plates = [];
+
+  const bulkInput  = document.getElementById('conv-input');
+  const errorEl    = document.getElementById('conv-error');
+  const summaryEl  = document.getElementById('conv-summary');
+  const resultsEl  = document.getElementById('conv-results');
+  const emptyEl    = document.getElementById('conv-empty');
+  const copyPanel  = document.getElementById('conv-copy-panel');
+
+  function normalize(str){ return str.toUpperCase().replace(/[^A-Z0-9]/g,''); }
+  function parseInput(text){
+    return text.split(/[\n,;]+/).map(s=>s.replace(/['"`\s]/g,'').trim()).filter(Boolean);
+  }
+  function detectFormat(plate){
+    const p=normalize(plate);
+    if(p.length!==7) return null;
+    if(/^[A-Z]{3}\d{4}$/.test(p)) return 'traditional';
+    if(/^[A-Z]{3}\d[A-Z]\d{2}$/.test(p)) return 'mercosul';
+    return null;
+  }
+  function toMercosul(plate){
+    const p=normalize(plate);
+    return p.substring(0,4)+DIGIT_TO_LETTER[parseInt(p[4],10)]+p.substring(5);
+  }
+  function toTraditional(plate){
+    const p=normalize(plate);
+    const digit=LETTER_TO_DIGIT[p[4]];
+    if(digit===undefined) return null;
+    return p.substring(0,3)+'-'+p.substring(3,4)+digit+p.substring(5);
+  }
+  function formatTraditional(plate){
+    const p=normalize(plate);
+    return p.substring(0,3)+'-'+p.substring(3);
+  }
+  function processPlate(raw){
+    const format=detectFormat(raw);
+    if(!format) return {error:true,original:raw};
+    const normalized=normalize(raw);
+    if(format==='traditional'){
+      return {error:false,originalFormat:'traditional',
+        traditional:formatTraditional(normalized),mercosul:toMercosul(normalized),
+        original:normalized,converted:toMercosul(normalized)};
+    } else {
+      const trad=toTraditional(normalized);
+      if(!trad) return {error:true,original:raw};
+      return {error:false,originalFormat:'mercosul',
+        traditional:trad,mercosul:normalized,
+        original:normalized,converted:trad.replace('-','')};
+    }
+  }
+  function renderResultCard(item){
+    if(item.error){
+      return `<div class="error-card">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>Inválida: "${cm_escapeHtml(item.original)}"</div>`;
+    }
+    const tradClass=item.originalFormat==='traditional'?'is-trad':'is-conv';
+    const mercClass=item.originalFormat==='mercosul'?'is-merc':'is-conv';
+    const tradLabel=item.originalFormat==='traditional'?'Tradicional · original':'Tradicional · convertida';
+    const mercLabel=item.originalFormat==='mercosul'?'Mercosul · original':'Mercosul · convertida';
+    return `<div class="result-card"><div class="pair">
+      <div class="plate-slot"><div class="plate-slot-label">${tradLabel}</div><div class="plate-box ${tradClass}">${item.traditional}</div></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+        <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg></div>
+      <div class="plate-slot"><div class="plate-slot-label">${mercLabel}</div><div class="plate-box ${mercClass}">${item.mercosul}</div></div>
+    </div></div>`;
+  }
+  function render(){
+    if(!plates.length){
+      resultsEl.innerHTML='';summaryEl.style.display='none';
+      copyPanel.style.display='none';emptyEl.style.display='block';return;
+    }
+    emptyEl.style.display='none';copyPanel.style.display='block';
+    const valid=plates.filter(p=>!p.error).length;
+    const errors=plates.length-valid;
+    summaryEl.style.display='flex';
+    summaryEl.innerHTML=`<span class="tag"><strong>${valid}</strong> convertida${valid!==1?'s':''}</span>${errors>0?`<span class="tag err"><strong>${errors}</strong> inválida${errors!==1?'s':''}</span>`:''}`;
+    resultsEl.innerHTML=plates.map(renderResultCard).join('');
+  }
+  function showError(msg){
+    errorEl.innerHTML='<svg class="status__icon"><use href="#ic-alert"/></svg><div>'+msg+'</div>';
+    errorEl.classList.remove('hidden');
+    setTimeout(()=>errorEl.classList.add('hidden'),3500);
+  }
+  function doConvert(){
+    const raw=bulkInput.value;
+    if(!raw.trim()){showError('Cole alguma placa primeiro.');return;}
+    const items=parseInput(raw);
+    if(!items.length){showError('Nenhuma placa encontrada na entrada.');return;}
+    plates=items.map(processPlate);render();
+  }
+  function copyText(text,btnEl){
+    navigator.clipboard.writeText(text).then(()=>{
+      const orig=btnEl.innerHTML;btnEl.innerHTML='Copiado!';
+      setTimeout(()=>{btnEl.innerHTML=orig;},1500);
+      toastCopiado();
+    }).catch(()=>{showError('Não foi possível copiar.');mostrarToast('Não foi possível copiar','err');});
+  }
+  function getValid(){return plates.filter(p=>!p.error);}
+  function uniqueValues(getter){return[...new Set(getValid().map(getter))];}
+  function buildSqlIn(values){return'('+values.map(v=>`'${v}'`).join(',')+')';}
+
+  document.getElementById('conv-btn-convert').addEventListener('click',doConvert);
+  document.getElementById('conv-btn-clear').addEventListener('click',()=>{plates=[];bulkInput.value='';render();});
+  bulkInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();doConvert();}});
+  document.getElementById('copy-orig-list-btn').addEventListener('click',(e)=>{const v=uniqueValues(p=>p.original);if(!v.length)return showError('Nenhuma placa válida.');copyText(v.join('\n'),e.currentTarget);});
+  document.getElementById('copy-orig-sql-btn').addEventListener('click',(e)=>{const v=uniqueValues(p=>p.original);if(!v.length)return showError('Nenhuma placa válida.');copyText(buildSqlIn(v),e.currentTarget);});
+  document.getElementById('copy-conv-list-btn').addEventListener('click',(e)=>{const v=uniqueValues(p=>p.converted);if(!v.length)return showError('Nenhuma placa válida.');copyText(v.join('\n'),e.currentTarget);});
+  document.getElementById('copy-conv-sql-btn').addEventListener('click',(e)=>{const v=uniqueValues(p=>p.converted);if(!v.length)return showError('Nenhuma placa válida.');copyText(buildSqlIn(v),e.currentTarget);});
+  render();
+})();
+
+/* ============================================================
+   APP 2 — VALIDADOR DE PLACAS
+   Lógica idêntica ao Validador_de_placa_de_trânsito.html
+   ============================================================ */
+const FORMATO_ANTIGO   = /^[A-Z]{3}[0-9]{4}$/;
+const FORMATO_MERCOSUL_V = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
+const GABARITO = { antigo:['L','L','L','N','N','N','N'], mercosul:['L','L','L','N','L','N','N'] };
+let val_dadosValidos=[], val_dadosInvalidos=[];
+
+function val_classificar(ch){
+  if(/[A-Z]/.test(ch)) return'L';
+  if(/[0-9]/.test(ch)) return'N';
+  return'?';
+}
+/* Índice (0-based) do primeiro caractere fora do gabarito mais próximo, ou -1. */
+function val_posicaoErro(placa){
+  if(placa.length!==7) return -1;
+  const tipos=[...placa].map(val_classificar);
+  let melhor='antigo',maxAcertos=-1;
+  for(const fmt in GABARITO){
+    const ac=tipos.filter((t,i)=>t===GABARITO[fmt][i]).length;
+    if(ac>maxAcertos){maxAcertos=ac;melhor=fmt;}
+  }
+  for(let i=0;i<7;i++) if(tipos[i]!==GABARITO[melhor][i]) return i;
+  return -1;
+}
+/* Placa com o caractere errado grifado (HTML), para o diagnóstico inline. */
+function val_placaGrifada(placa){
+  const i=val_posicaoErro(placa);
+  if(i<0) return cm_escapeHtml(placa||'(vazia)');
+  return cm_escapeHtml(placa.slice(0,i))+'<span class="pos-err">'+cm_escapeHtml(placa[i])+'</span>'+cm_escapeHtml(placa.slice(i+1))
+    +'<span class="pos-err-label">posição '+(i+1)+'</span>';
+}
+function val_diagnosticar(placa){
+  if(placa.length!==7) return`tem ${placa.length} caractere(s), esperado 7`;
+  const tipos=[...placa].map(val_classificar);
+  let melhor='antigo',maxAcertos=-1;
+  for(const fmt in GABARITO){
+    const ac=tipos.filter((t,i)=>t===GABARITO[fmt][i]).length;
+    if(ac>maxAcertos){maxAcertos=ac;melhor=fmt;}
+  }
+  const esperado=GABARITO[melhor];
+  for(let i=0;i<7;i++){
+    if(tipos[i]!==esperado[i]){
+      return`posição ${i+1} ("${placa[i]}") deveria ser ${esperado[i]==='L'?'letra':'número'} (formato ${melhor})`;
+    }
+  }
+  return'formato não reconhecido';
+}
+function val_verificar(){
+  const texto=document.getElementById('val-input').value;
+  const box=document.getElementById('val-resultado');
+  const resumo=document.getElementById('val-resumo');
+  const downloads=document.getElementById('val-downloads');
+  box.innerHTML='';
+  const linhas=texto.split('\n');
+  const itensValidos=[],itensInvalidos=[];
+  val_dadosValidos=[];val_dadosInvalidos=[];
+  linhas.forEach((bruta,idx)=>{
+    const placa=bruta.toUpperCase().replace(/[\s-]/g,'');
+    if(!placa) return;
+    const numLinha=idx+1;
+    const item=document.createElement('div');
+    if(FORMATO_ANTIGO.test(placa)||FORMATO_MERCOSUL_V.test(placa)){
+      const tipo=FORMATO_ANTIGO.test(placa)?'antigo':'Mercosul';
+      item.className='item ok';
+      item.innerHTML=`<span class="linha">L${numLinha}</span><span class="placa">${placa}</span><span class="info">${tipo}</span>`;
+      itensValidos.push(item);
+      val_dadosValidos.push({Linha:numLinha,Placa:placa,Formato:tipo});
+    } else {
+      item.className='item erro';
+      item.innerHTML=`<span class="linha">L${numLinha}</span><span class="placa">${val_placaGrifada(placa)}</span><span class="sugestao">${cm_escapeHtml(val_diagnosticar(placa))}</span>`;
+      itensInvalidos.push(item);
+      val_dadosInvalidos.push({Linha:numLinha,Placa:placa,Problema:val_diagnosticar(placa)});
+    }
+  });
+  const total=itensValidos.length+itensInvalidos.length;
+  if(!total){resumo.style.display='none';downloads.style.display='none';return;}
+  function montarGrupo(classe,titulo,itens){
+    if(!itens.length) return;
+    const grupo=document.createElement('div');
+    grupo.className=`grupo ${classe}`;
+    grupo.innerHTML=`<h2>${titulo} (${itens.length})</h2>`;
+    const lista=document.createElement('div');lista.className='lista';
+    itens.forEach(el=>lista.appendChild(el));
+    grupo.appendChild(lista);box.appendChild(grupo);
+  }
+  montarGrupo('validas','Válidas',itensValidos);
+  montarGrupo('invalidas','Inválidas',itensInvalidos);
+  resumo.style.display='block';
+  resumo.textContent=`${total} placa(s): ${itensValidos.length} válida(s), ${itensInvalidos.length} inválida(s).`;
+  downloads.style.display='flex';
+  document.querySelector('.dl-validas').disabled=val_dadosValidos.length===0;
+  document.querySelector('.dl-invalidas').disabled=val_dadosInvalidos.length===0;
+}
+function val_limpar(){
+  document.getElementById('val-input').value='';
+  document.getElementById('val-resultado').innerHTML='';
+  document.getElementById('val-resumo').style.display='none';
+  document.getElementById('val-downloads').style.display='none';
+  val_dadosValidos=[];val_dadosInvalidos=[];
+  document.getElementById('val-input').focus();
+}
+function val_baixar(tipo){
+  const dados=tipo==='validas'?val_dadosValidos:val_dadosInvalidos;
+  const aba=tipo==='validas'?'Validas':'Invalidas';
+  const arquivo=tipo==='validas'?'placas_validas.xlsx':'placas_invalidas.xlsx';
+  if(!dados.length) return;
+  const planilha=XLSX.utils.json_to_sheet(dados);
+  const pasta=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(pasta,planilha,aba);
+  XLSX.writeFile(pasta,arquivo);
+}
+
+/* ============================================================
+   APP 3 — JSON → CSV
+   Lógica idêntica ao Conversor_JSON_para_CSV.html
+   ============================================================ */
+(function(){
+  const THEME_KEY='cm-theme';
+  let currentCsv='',currentPlates=[];
+
+  const input        = document.getElementById('json-input');
+  const statusEl     = document.getElementById('json-status');
+  const statsRow     = document.getElementById('json-stats');
+  const previewBlock = document.getElementById('json-preview-block');
+  const csvPreview   = document.getElementById('json-csv-preview');
+  const btnDownload  = document.getElementById('json-btn-download');
+  const btnCopySql   = document.getElementById('json-btn-sql');
+
+  const ICONS={
+    success:'<svg class="status__icon"><use href="#ic-check"/></svg>',
+    error:  '<svg class="status__icon"><use href="#ic-alert"/></svg>'
+  };
+  const STATUS_CLS={success:'ok',error:'err'};
+  function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function showStatus(msg,type){
+    statusEl.innerHTML=ICONS[type]+'<div>'+escHtml(msg)+'</div>';
+    statusEl.className='status '+STATUS_CLS[type];
+  }
+  function hideStatus(){statusEl.className='status hidden';}
+
+  function parseInput(raw){
+    const text=raw.trim();
+    if(!text) throw new Error('O campo está vazio. Cole pelo menos um JSON.');
+    try{const p=JSON.parse(text);return Array.isArray(p)?p:[p];}catch(_){}
+    try{const p=JSON.parse('['+text.replace(/}\s*{/g,'},{')+']');return Array.isArray(p)?p:[p];}catch(_){}
+    const blocks=extractObjects(text);
+    if(!blocks.length) throw new Error('Não foi possível identificar nenhum objeto JSON válido na entrada.');
+    const results=[],errors=[];
+    blocks.forEach((b,i)=>{try{results.push(JSON.parse(b));}catch(e){errors.push('Objeto #'+(i+1)+': '+e.message);}});
+    if(errors.length) throw new Error('JSON inválido encontrado:\n• '+errors.join('\n• '));
+    return results;
+  }
+  function extractObjects(text){
+    const out=[];let depth=0,start=-1,inStr=false,esc=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(inStr){if(esc)esc=false;else if(c==='\\')esc=true;else if(c==='"')inStr=false;continue;}
+      if(c==='"'){inStr=true;continue;}
+      if(c==='{'){if(depth===0)start=i;depth++;}
+      else if(c==='}'){depth--;if(depth===0&&start!==-1){out.push(text.slice(start,i+1));start=-1;}}
+    }
+    return out;
+  }
+  function collectColumns(records){
+    const cols=[],seen=new Set();
+    records.forEach(r=>{if(r&&typeof r==='object'&&!Array.isArray(r))Object.keys(r).forEach(k=>{if(!seen.has(k)){seen.add(k);cols.push(k);}});});
+    return cols;
+  }
+  function csvEscape(val){
+    if(val===null||val===undefined) return'';
+    let s=typeof val==='object'?JSON.stringify(val):String(val);
+    if(/[",\r\n;]/.test(s)) s='"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }
+  function buildCsv(records,columns){
+    const lines=[columns.map(csvEscape).join(',')];
+    records.forEach(r=>{lines.push(columns.map(c=>csvEscape(r?r[c]:'')).join(','));});
+    return lines.join('\r\n');
+  }
+  function collectPlates(records){
+    const set=new Set(),order=[],keys=['placa','Placa','PLACA'];
+    records.forEach(r=>{
+      if(!r||typeof r!=='object') return;
+      for(const k of keys){if(r[k]!=null&&String(r[k]).trim()!==''){const v=String(r[k]).trim();if(!set.has(v)){set.add(v);order.push(v);}break;}}
+    });
+    return order;
+  }
+  function buildSqlIn(plates){
+    if(!plates.length) return'()';
+    return'('+plates.map(p=>"'"+p.replace(/'/g,"''")+"'").join(', ')+')';
+  }
+  function download(filename,content){
+    const blob=new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),200);
+  }
+  async function copyToClipboard(text){
+    try{await navigator.clipboard.writeText(text);return true;}
+    catch(_){
+      const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.select();let ok=false;
+      try{ok=document.execCommand('copy');}catch(_){}
+      document.body.removeChild(ta);return ok;
+    }
+  }
+  function process(){
+    hideStatus();statsRow.style.display='none';previewBlock.style.display='none';
+    btnDownload.disabled=true;btnCopySql.disabled=true;currentCsv='';currentPlates=[];
+    let records;
+    try{records=parseInput(input.value);}catch(e){showStatus(e.message,'error');return;}
+    const invalid=[];
+    records.forEach((r,i)=>{if(r===null||typeof r!=='object'||Array.isArray(r))invalid.push('Item #'+(i+1)+' não é um objeto JSON.');});
+    if(invalid.length){showStatus(invalid.join('\n• '),'error');return;}
+    if(!records.length){showStatus('Nenhum objeto JSON encontrado.','error');return;}
+    const columns=collectColumns(records);
+    if(!columns.length){showStatus('Os objetos não contêm nenhuma coluna.','error');return;}
+    currentCsv=buildCsv(records,columns);
+    currentPlates=collectPlates(records);
+    document.getElementById('json-count-records').textContent=records.length;
+    document.getElementById('json-count-cols').textContent=columns.length;
+    document.getElementById('json-count-plates').textContent=currentPlates.length;
+    statsRow.style.display='grid';
+    csvPreview.textContent=currentCsv.length>5000?currentCsv.slice(0,5000)+'\n... (pré-visualização truncada)':currentCsv;
+    previewBlock.style.display='block';
+    btnDownload.disabled=false;
+    btnCopySql.disabled=currentPlates.length===0;
+    let msg=records.length+' registro(s) processado(s) com sucesso.';
+    if(!currentPlates.length) msg+=' Nenhuma placa encontrada (campo "placa" ausente).';
+    showStatus(msg,'success');
+  }
+
+  document.getElementById('json-btn-process').addEventListener('click',process);
+  btnDownload.addEventListener('click',()=>{
+    if(!currentCsv) return;
+    const ts=new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+    download('dados-'+ts+'.csv',currentCsv);
+  });
+  btnCopySql.addEventListener('click',async()=>{
+    if(!currentPlates.length) return;
+    const ok=await copyToClipboard(buildSqlIn(currentPlates));
+    showStatus(ok?currentPlates.length+' placa(s) copiada(s) para a área de transferência.':'Não foi possível copiar automaticamente.',ok?'success':'error');
+    if(ok) toastCopiado(); else mostrarToast('Não foi possível copiar','err');
+  });
+  document.getElementById('json-btn-sample').addEventListener('click',()=>{
+    input.value=JSON.stringify([
+      {placa:'EVW7J83',chassi:'8AWBJ6008RA816591',renavam:'01390002397',empresa:'RAC',dataEnvio:'2026-04-09',uf:'SP',tipoConsulta:'SN',dataSituacao:'08/04/2026'},
+      {placa:'ABC1D23',chassi:'9BWZZZ377VT004251',renavam:'00891234567',empresa:'RAC',dataEnvio:'2026-04-10',uf:'MG',tipoConsulta:'SN',dataSituacao:'09/04/2026'},
+      {placa:'XYZ9K88',chassi:'1HGCM82633A123456',renavam:'01234567890',empresa:'FROTA',dataEnvio:'2026-04-11',uf:'RJ',tipoConsulta:'SN',dataSituacao:'10/04/2026'}
+    ],null,2);
+  });
+  document.getElementById('json-btn-clear').addEventListener('click',()=>{
+    input.value='';hideStatus();statsRow.style.display='none';previewBlock.style.display='none';
+    btnDownload.disabled=true;btnCopySql.disabled=true;currentCsv='';currentPlates=[];input.focus();
+  });
+})();
+
+/* ============================================================
+   APP 5 — CONVERSOR SQL IN
+   ============================================================ */
+(function(){
+  let lastRaw = '';
+
+  function getLines(){
+    return document.getElementById('sqlin-ta').value
+      .split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  }
+
+  window.sqlin_convert = function(){
+    const lines = getLines();
+    const emptyEl  = document.getElementById('sqlin-empty');
+    const outputEl = document.getElementById('sqlin-output');
+    const boxEl    = document.getElementById('sqlin-box');
+    const badgeEl  = document.getElementById('sqlin-badge');
+    if(!lines.length){
+      emptyEl.style.display='flex'; outputEl.style.display='none'; return;
+    }
+    lastRaw = 'in ('+lines.map(l=>"'"+l.replace(/'/g,"''")+"'").join(', ')+')';
+    // highlight syntax
+    const parts = lines.map(l=>`<span style="color:var(--ok)">'${l.replace(/'/g,"''").replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}'</span>`).join('<span style="color:var(--text-3)">, </span>');
+    boxEl.innerHTML = `<span style="color:var(--accent);font-weight:600;">in</span> <span style="color:var(--text-2)">(</span>${parts}<span style="color:var(--text-2)">)</span>`;
+    badgeEl.textContent = lines.length+(lines.length===1?' item':' itens');
+    emptyEl.style.display='none'; outputEl.style.display='block';
+  };
+
+  window.sqlin_clear = function(){
+    document.getElementById('sqlin-ta').value='';
+    document.getElementById('sqlin-empty').style.display='flex';
+    document.getElementById('sqlin-output').style.display='none';
+    lastRaw='';
+  };
+
+  window.sqlin_copy = function(){
+    if(!lastRaw) return;
+    const btn = document.getElementById('sqlin-copy-btn');
+    navigator.clipboard.writeText(lastRaw).then(()=>{
+      btn.innerHTML='<svg><use href="#ic-check"/></svg> Copiado!';
+      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Exportar SQL IN'; },1800);
+      toastCopiado();
+    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; mostrarToast('Não foi possível copiar','err'); });
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    const ta = document.getElementById('sqlin-ta');
+    if(ta) ta.addEventListener('keydown',(e)=>{
+      if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();window.sqlin_convert();}
+    });
+  });
+})();
+
+/* ============================================================
+   APP 5b — SQL IN AIT
+   ============================================================ */
+(function(){
+  let lastRaw = '';
+
+  function getLines(){
+    return document.getElementById('sqlait-ta').value
+      .split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  }
+
+  window.sqlait_convert = function(){
+    const lines = getLines();
+    const emptyEl  = document.getElementById('sqlait-empty');
+    const outputEl = document.getElementById('sqlait-output');
+    const boxEl    = document.getElementById('sqlait-box');
+    const badgeEl  = document.getElementById('sqlait-badge');
+    if(!lines.length){
+      emptyEl.style.display='flex'; outputEl.style.display='none'; return;
+    }
+    lastRaw = 'in ('+lines.map(l=>"'"+l.replace(/'/g,"''")+"'").join(', ')+')';
+    const parts = lines.map(l=>`<span style="color:var(--ok)">'${l.replace(/'/g,"''").replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}'</span>`).join('<span style="color:var(--text-3)">, </span>');
+    boxEl.innerHTML = `<span style="color:var(--accent);font-weight:600;">in</span> <span style="color:var(--text-2)">(</span>${parts}<span style="color:var(--text-2)">)</span>`;
+    badgeEl.textContent = lines.length+(lines.length===1?' AIT':' AITs');
+    emptyEl.style.display='none'; outputEl.style.display='block';
+  };
+
+  window.sqlait_clear = function(){
+    document.getElementById('sqlait-ta').value='';
+    document.getElementById('sqlait-empty').style.display='flex';
+    document.getElementById('sqlait-output').style.display='none';
+    lastRaw='';
+  };
+
+  window.sqlait_copy = function(){
+    if(!lastRaw) return;
+    const btn = document.getElementById('sqlait-copy-btn');
+    navigator.clipboard.writeText(lastRaw).then(()=>{
+      btn.innerHTML='<svg><use href="#ic-check"/></svg> Copiado!';
+      setTimeout(()=>{ btn.innerHTML='<svg><use href="#ic-copy"/></svg> Exportar SQL IN'; },1800);
+      toastCopiado();
+    }).catch(()=>{ btn.innerHTML='<svg><use href="#ic-alert"/></svg> Erro ao copiar'; mostrarToast('Não foi possível copiar','err'); });
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    const ta = document.getElementById('sqlait-ta');
+    if(ta) ta.addEventListener('keydown',(e)=>{
+      if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();window.sqlait_convert();}
+    });
+  });
+})();
+
+/* ============================================================
+   APP 6 — UNIFICADOR DE FROTA IMPEDIMENTO
+   ============================================================ */
+(function(){
+  let frota_files=[];
+  let frota_csvBlob=null;
+  let frota_csvFilename='';
+
+  const COLUMN_MAP={
+    'PLACA':'placa','RENAVAM':'renavam','CHASSI':'chassi',
+    'UF EMPLACAMENTO':'uf','STATUS LOCALIZA':'status_localiza',
+    'DATA CADASTRO':'data_cadastro_localiza','FROTA':'frota'
+  };
+  const OUTPUT_ORDER=['placa','renavam','chassi','uf','status_localiza','data_cadastro_localiza','frota','data_atualizacao'];
+
+  function normalizeHeader(h){
+    return String(h||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toUpperCase().trim().replace(/\s+/g,' ');
+  }
+  function escHtml(str){const d=document.createElement('div');d.textContent=str;return d.innerHTML;}
+  function normalizarRenavam(v){const d=String(v==null?'':v).replace(/\D/g,'');return d===''?'':d.padStart(11,'0');}
+  function dataAtual(){const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+  function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+
+  function frota_showAlert(html){
+    const b=document.getElementById('frota-alert');
+    b.innerHTML='<svg class="status__icon"><use href="#ic-alert"/></svg><div>'+html+'</div>';
+    b.classList.remove('hidden');
+  }
+  function frota_hideAlert(){document.getElementById('frota-alert').classList.add('hidden');}
+  function frota_setProgress(pct,label){
+    document.getElementById('frota-progress-wrap').style.display='block';
+    document.getElementById('frota-progress-fill').style.width=pct+'%';
+    document.getElementById('frota-progress-step').textContent=label;
+  }
+  function frota_dot(id,cls){
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('active','done');
+    if(cls) el.classList.add(cls);
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    const fi=document.getElementById('frota-file-input');
+    const drop=document.getElementById('frota-drop');
+    if(!fi||!drop) return;
+    drop.addEventListener('click',()=>{fi.value='';fi.click();});
+    drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.value='';fi.click();}});
+    fi.addEventListener('change',e=>{frota_adicionar(Array.from(e.target.files||[]));fi.value='';});
+    drop.addEventListener('dragover', e=>{e.preventDefault();drop.classList.add('is-over');});
+    drop.addEventListener('dragleave',e=>{e.preventDefault();drop.classList.remove('is-over');});
+    drop.addEventListener('drop',e=>{
+      e.preventDefault();drop.classList.remove('is-over');
+      frota_adicionar(Array.from(e.dataTransfer.files||[]));
+    });
+  });
+
+  /* Adiciona à lista (ignora extensão inválida e nome+tamanho repetidos). */
+  function frota_adicionar(files){
+    const invalidos=[];
+    for(const f of files){
+      if(!/\.(xlsx|xls)$/i.test(f.name)){invalidos.push(f.name);continue;}
+      if(frota_files.some(x=>x.name===f.name&&x.size===f.size)) continue;
+      frota_files.push(f);
+    }
+    if(invalidos.length) frota_showAlert(`Ignorado(s) por não ser Excel (.xlsx/.xls): <b>${invalidos.map(escHtml).join('</b>, <b>')}</b>.`);
+    else frota_hideAlert();
+    frota_renderLista();
+    frota_updateBtn();
+    frota_resetResultado();
+  }
+
+  window.frota_remover=function(idx){
+    frota_files.splice(idx,1);
+    frota_renderLista();
+    frota_updateBtn();
+    frota_resetResultado();
+  };
+
+  function frota_renderLista(){
+    const wrap=document.getElementById('frota-list-wrap');
+    const body=document.getElementById('frota-list-body');
+    if(!wrap||!body) return;
+    body.innerHTML='';
+    frota_files.forEach((f,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="num">${i+1}</td><td style="word-break:break-all;">${escHtml(f.name)}</td>
+        <td style="text-align:right;"><button type="button" class="btn btn--sm btn--danger" onclick="frota_remover(${i})">Remover</button></td>`;
+      body.appendChild(tr);
+    });
+    wrap.style.display=frota_files.length?'block':'none';
+    const lbl=document.getElementById('frota-step-files');
+    if(lbl) lbl.textContent=frota_files.length?`Arquivos (${frota_files.length})`:'Arquivos';
+  }
+
+  function frota_updateBtn(){
+    const btn=document.getElementById('frota-process-btn');
+    if(btn) btn.disabled=frota_files.length===0;
+    frota_dot('frota-dot-files',frota_files.length?'done':null);
+  }
+
+  function frota_resetResultado(){
+    frota_csvBlob=null;
+    const r=document.getElementById('frota-result');
+    const p=document.getElementById('frota-progress-wrap');
+    const f=document.getElementById('frota-progress-fill');
+    if(r) r.style.display='none';
+    if(p) p.style.display='none';
+    if(f) f.style.width='0%';
+    frota_dot('frota-dot-merge',null);
+    frota_dot('frota-dot-csv',null);
+  }
+
+  window.frota_resetTudo=function(){
+    frota_files=[];
+    frota_renderLista();
+    frota_updateBtn();
+    frota_resetResultado();
+    frota_hideAlert();
+  };
+
+  function frota_lerExcel(file){
+    return new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=e=>{
+        try{
+          const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+          res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false}));
+        }catch(err){rej(new Error(`Não foi possível ler "${file.name}".`));}
+      };
+      r.onerror=()=>rej(new Error(`Falha ao carregar "${file.name}".`));
+      r.readAsArrayBuffer(file);
+    });
+  }
+
+  function frota_validarExtrair(rows,fileName){
+    if(!rows.length) throw new Error(`"${fileName}" está vazio.`);
+    const norm={};
+    Object.keys(rows[0]).forEach(k=>{norm[normalizeHeader(k)]=k;});
+    const faltando=Object.keys(COLUMN_MAP).filter(h=>!(h in norm));
+    if(faltando.length) throw new Error(`"${fileName}" sem coluna(s): ${faltando.join(', ')}.`);
+    return rows.map(row=>{
+      const out={};
+      Object.keys(COLUMN_MAP).forEach(h=>{
+        const v=String(row[norm[h]]??'').trim();
+        out[COLUMN_MAP[h]]=COLUMN_MAP[h]==='renavam'?normalizarRenavam(v):v;
+      });
+      return out;
+    });
+  }
+
+  function frota_gerarCSV(rows){
+    const sep=';';
+    const esc=v=>{let s=String(v??'');if(s.includes(sep)||s.includes('"')||s.includes('\n'))s='"'+s.replace(/"/g,'""')+'"';return s;};
+    return '\uFEFF'+[OUTPUT_ORDER.join(sep),...rows.map(r=>OUTPUT_ORDER.map(c=>esc(r[c])).join(sep))].join('\r\n');
+  }
+
+  window.frota_processar=async function(){
+    frota_hideAlert();
+    frota_resetResultado();
+    const btn=document.getElementById('frota-process-btn');
+    if(btn) btn.disabled=true;
+    try{
+      if(!frota_files.length) throw new Error('Selecione pelo menos um arquivo.');
+      let unified=[];
+      const n=frota_files.length;
+      frota_dot('frota-dot-files','active');
+      for(let i=0;i<n;i++){
+        frota_setProgress(Math.round((i/n)*55),`Lendo arquivo ${i+1} de ${n}: ${frota_files[i].name}`);
+        await wait(120);
+        const rows=await frota_lerExcel(frota_files[i]);
+        unified=unified.concat(frota_validarExtrair(rows,frota_files[i].name));
+      }
+      frota_dot('frota-dot-files','done');
+      frota_dot('frota-dot-merge','active');
+      frota_setProgress(65,`Unificando ${unified.length} linhas...`);
+      await wait(300);
+      const hoje=dataAtual();
+      unified.forEach(r=>r.data_atualizacao=hoje);
+      frota_dot('frota-dot-merge','done');
+      frota_dot('frota-dot-csv','active');
+      frota_setProgress(95,'Gerando CSV...');
+      await wait(250);
+      const csvStr=frota_gerarCSV(unified);
+      frota_csvBlob=new Blob([csvStr],{type:'text/csv;charset=utf-8;'});
+      frota_csvFilename=`frota_unificada_${hoje}.csv`;
+      frota_setProgress(100,'Concluído.');
+      frota_dot('frota-dot-csv','done');
+      const stat=document.getElementById('frota-stat-rows');
+      const res=document.getElementById('frota-result');
+      if(stat) stat.textContent=unified.length;
+      if(res) res.style.display='block';
+    }catch(err){
+      frota_resetResultado();
+      frota_showAlert(`<strong>Erro:</strong> ${escHtml(err.message)}`);
+    }finally{
+      if(btn) btn.disabled=frota_files.length===0;
+    }
+  };
+
+  window.frota_baixarCSV=function(){
+    if(!frota_csvBlob) return;
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(frota_csvBlob);
+    a.download=frota_csvFilename||'frota_unificada.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+  };
+})();
+
+/* ============================================================
+   APP 7 — CONSOLIDADOR DE ARQUIVOS
+   Une múltiplos .txt/.csv/.xlsx em um único conjunto de dados.
+   ============================================================ */
+(function(){
+  /* parsed[]: { name, rows(matriz 2D), ncols, nrows, error } */
+  let parsed = [];
+
+  const input = document.getElementById('cons-file-input');
+  const drop  = document.getElementById('cons-drop');
+
+  drop.addEventListener('click', ()=>input.click());
+  input.addEventListener('change', e=>{ handleFiles(e.target.files); input.value=''; });
+  drop.addEventListener('dragover',  e=>{ e.preventDefault(); drop.classList.add('is-over'); });
+  drop.addEventListener('dragleave', e=>{ e.preventDefault(); drop.classList.remove('is-over'); });
+  drop.addEventListener('drop', e=>{
+    e.preventDefault(); drop.classList.remove('is-over');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  /* Lê todos os arquivos, monta a matriz de cada um e dispara o relatório. */
+  async function handleFiles(fileList){
+    const arr=[...fileList];
+    if(!arr.length) return;
+    parsed = [];
+    for(const f of arr){
+      try{
+        const rows = await readFile(f);
+        if(!rows || rows.length===0 || (rows.length===1 && rows[0].every(c=>c===''))){
+          parsed.push({name:f.name, error:'Vazio ou sem dados'});
+        }else{
+          parsed.push({name:f.name, rows, nrows:rows.length, ncols:maxCols(rows)});
+        }
+      }catch(err){
+        parsed.push({name:f.name, error:'Corrompido: '+err.message});
+      }
+    }
+    render();
+  }
+
+  /* Lê 1 arquivo conforme a extensão -> matriz 2D */
+  function readFile(file){
+    const ext=file.name.split('.').pop().toLowerCase();
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onerror=()=>reject(new Error('falha de leitura'));
+      if(ext==='xlsx'){
+        reader.onload=e=>{
+          try{
+            const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+            const ws=wb.Sheets[wb.SheetNames[0]];
+            resolve(XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false}));
+          }catch(err){reject(err);}
+        };
+        reader.readAsArrayBuffer(file);
+      }else{
+        reader.onload=e=>{
+          try{ resolve(parseText(e.target.result)); }
+          catch(err){reject(err);}
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
+
+  /* Parser CSV/TXT: detecta o separador (; , ou tab) pela 1ª linha com conteúdo. */
+  function parseText(text){
+    const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.length>0);
+    if(!lines.length) return [];
+    const sample=lines[0];
+    const sep = sample.includes('\t')?'\t' : (sample.split(';').length>sample.split(',').length?';':',');
+    return lines.map(line=>splitLine(line,sep));
+  }
+  function splitLine(line,sep){
+    const out=[]; let cur=''; let q=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){ q=!q; }
+      else if(c===sep && !q){ out.push(cur); cur=''; }
+      else cur+=c;
+    }
+    out.push(cur);
+    return out.map(v=>v.trim());
+  }
+
+  function maxCols(rows){ return rows.reduce((m,r)=>Math.max(m,r.length),0); }
+
+  /* Maior length por coluna — útil para dimensionar VARCHAR(n). */
+  function calcColWidths(rows, skipHeader){
+    const start = skipHeader ? 1 : 0;
+    const ncols = maxCols(rows);
+    const widths = new Array(ncols).fill(0);
+    for(let i=start;i<rows.length;i++){
+      const r=rows[i];
+      for(let c=0;c<ncols;c++){
+        const len = r[c]==null ? 0 : String(r[c]).length;
+        if(len>widths[c]) widths[c]=len;
+      }
+    }
+    return widths;
+  }
+
+  /* Relatório + validação de estrutura */
+  function render(){
+    const body=document.getElementById('cons-report-body');
+    const alertBox=document.getElementById('cons-alert-box');
+    body.innerHTML='';
+
+    const valid = parsed.filter(p=>!p.error);
+    const refCols = valid.length ? valid[0].ncols : null;
+
+    parsed.forEach((p,i)=>{
+      const tr=document.createElement('tr');
+      const rm=`<td class="action"><button class="btn btn--sm btn--danger" onclick="cons_removerArquivo(${i})">Remover</button></td>`;
+      if(p.error){
+        tr.className='is-bad';
+        tr.innerHTML=`<td>${esc(p.name)}</td><td class="num">—</td><td class="num">—</td>
+          <td><span class="tag err">${esc(p.error)}</span></td>${rm}`;
+      }else{
+        const diverge = p.ncols!==refCols;
+        if(diverge) tr.className='is-bad';
+        tr.innerHTML=`<td>${esc(p.name)}</td><td class="num">${p.nrows}</td><td class="num">${p.ncols}</td>
+          <td><span class="tag ${diverge?'err':'ok'}">${diverge?'divergente':'ok'}</span></td>${rm}`;
+      }
+      body.appendChild(tr);
+    });
+
+    document.getElementById('cons-report-card').style.display='block';
+    document.getElementById('cons-clear-row').style.display='flex';
+
+    const diverging = valid.filter(p=>p.ncols!==refCols);
+    const errored = parsed.filter(p=>p.error);
+    let msgs=[];
+    if(errored.length) msgs.push(`<div class="status err"><svg class="status__icon"><use href="#ic-alert"/></svg><div>${errored.length} arquivo(s) com erro serão ignorados.</div></div>`);
+    if(diverging.length && valid.length)
+      msgs.push(`<div class="status err"><svg class="status__icon"><use href="#ic-alert"/></svg><div>Estrutura divergente: esperado ${refCols} coluna(s). ${diverging.length} arquivo(s) fora do padrão (destacados).</div></div>`);
+    if(valid.length && !diverging.length)
+      msgs.push(`<div class="status ok"><svg class="status__icon"><use href="#ic-check"/></svg><div>Todos os ${valid.length} arquivo(s) válidos têm ${refCols} coluna(s). Prontos para consolidar.</div></div>`);
+    alertBox.innerHTML=msgs.join('');
+
+    const compat = valid.filter(p=>p.ncols===refCols);
+    document.getElementById('cons-export-card').style.display = compat.length ? 'block' : 'none';
+    document.getElementById('cons-export-hint').textContent =
+      compat.length ? `${compat.length} arquivo(s) serão unidos.` : '';
+
+    renderWidths(compat);
+  }
+
+  /* Tabela de tamanho máximo por coluna */
+  function renderWidths(compat){
+    const card=document.getElementById('cons-width-card');
+    const wbody=document.getElementById('cons-width-body');
+    if(!compat.length){ card.style.display='none'; return; }
+
+    let all=[];
+    compat.forEach(p=>{ all=all.concat(p.rows); });
+
+    const skipHeader=document.getElementById('cons-has-header').checked;
+    const widths=calcColWidths(all, skipHeader);
+    const header = skipHeader ? all[0] : null;
+
+    wbody.innerHTML='';
+    widths.forEach((w,c)=>{
+      const nome = header && header[c] ? esc(header[c]) : `Coluna ${c+1}`;
+      const sug = w===0 ? 'VARCHAR(1)' : `VARCHAR(${Math.max(1,Math.ceil(w*1.2))})`;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="num">${c+1}</td><td>${nome}</td><td class="num">${w}</td><td><code>${sug}</code></td>`;
+      wbody.appendChild(tr);
+    });
+    card.style.display='block';
+  }
+
+  window.cons_render = render;
+
+  window.cons_limparTudo = function(){
+    parsed=[];
+    ['cons-report-card','cons-width-card','cons-export-card','cons-clear-row']
+      .forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById('cons-file-input').value='';
+  };
+
+  /* Remover recalcula tudo — a referência de colunas pode mudar. */
+  window.cons_removerArquivo = function(i){
+    parsed.splice(i,1);
+    if(parsed.length) render();
+    else window.cons_limparTudo();
+  };
+
+  /* Concatena as matrizes de todos os arquivos com nº de colunas = referência. */
+  function consolidar(){
+    const valid=parsed.filter(p=>!p.error);
+    if(!valid.length) return [];
+    const refCols=valid[0].ncols;
+    let all=[];
+    valid.filter(p=>p.ncols===refCols).forEach(p=>{ all=all.concat(p.rows); });
+    return all;
+  }
+
+  window.cons_exportar = function(){
+    const data=consolidar();
+    if(!data.length){ alert('Nada para exportar.'); return; }
+    const fmt=document.getElementById('cons-fmt').value;
+    const stamp=new Date().toISOString().slice(0,10);
+    const custom=document.getElementById('cons-fname').value.trim().replace(/[\\/:*?"<>|]/g,'');
+    const fname = custom || `consolidado_${stamp}`;
+
+    if(fmt==='xlsx'){
+      const ws=XLSX.utils.aoa_to_sheet(data);
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,'Consolidado');
+      XLSX.writeFile(wb,fname+'.xlsx');
+    }else{
+      const sep = fmt==='txt' ? '\t' : ',';
+      // BOM garante acento correto no Excel
+      const body=data.map(r=>r.map(c=>csvCell(c,sep)).join(sep)).join('\r\n');
+      download('\uFEFF'+body, fname+'.'+fmt, fmt==='csv'?'text/csv':'text/plain');
+    }
+  };
+
+  function csvCell(v,sep){
+    v=(v==null)?'':String(v);
+    return (v.includes(sep)||v.includes('"')||v.includes('\n'))
+      ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }
+  function download(content,filename,mime){
+    const blob=new Blob([content],{type:mime+';charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+})();
+
+</script>
+<link rel="stylesheet" href="desktop.css">
+<script src="desktop.js"></script>
+</body>
+</html>

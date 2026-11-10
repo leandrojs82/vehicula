@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+work/
+dist/
+build/
+.env
+.env.*
+*.pbix
+*.xlsx
+*.xls
+*.csv
+*.log

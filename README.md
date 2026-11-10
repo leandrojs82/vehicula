@@ -1,5 +1,17 @@
 # ⚡ Vehicula · Ferramentas
 
+## Aplicativo Windows
+
+A versão desktop reúne as sete ferramentas HTML em uma toolbar com painel interno e acesso ao PreparaFrota e ao conversor PBIX para Excel.
+
+- [Baixar Vehicula para Windows de 64 bits](https://github.com/leandrojs82/vehicula/releases/latest/download/Vehicula-Windows.zip)
+- [Código-fonte e instruções da toolbar](desktop/README.md)
+- [Registro das verificações](desktop/VERIFICACAO.md)
+
+Extraia toda a pasta do ZIP e abra **Vehicula.exe**. A pasta `_internal` acompanha o executável. O painel utiliza o Microsoft Edge WebView2 Runtime, conforme as instruções da versão desktop.
+
+## Ferramentas web
+
 Conjunto de utilitários web para processamento de **placas veiculares**, infrações e dados veiculares do Vehicula. Todas as ferramentas funcionam **100% no navegador** — sem servidor, sem instalação, sem dependências externas além do SheetJS (carregado via CDN).
 
 ---
